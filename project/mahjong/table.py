@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from typing import List, Dict, Optional
+
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
 from mahjong.meld import Meld
 from mahjong.player import Player, EnemyPlayer
@@ -8,11 +10,11 @@ from mahjong.utils import plus_dora, is_aka_dora
 
 class Table(object):
     # our bot
-    player = None
+    player = None  # type: Player
     # main bot + all other players
-    players = None
+    players = []  # type: List[Union[Player, EnemyPlayer]]
 
-    dora_indicators = None
+    dora_indicators = []  # type: List[int]
 
     dealer_seat = 0
     round_number = 0
@@ -23,7 +25,7 @@ class Table(object):
     count_of_players = 4
 
     # array of tiles in 34 format
-    revealed_tiles = None
+    revealed_tiles = []  # type: List[int]
 
     previous_ai = False
 
@@ -63,7 +65,7 @@ class Table(object):
         # 13 - tiles in each player hand
         self.count_of_remaining_tiles = 136 - 14 - self.count_of_players * 13
 
-    def add_called_meld(self, player_seat, meld):
+    def add_called_meld(self, player_seat: int, meld: Meld):
         # when opponent called meld it is means
         # that he discards tile from hand, not from wall
         self.count_of_remaining_tiles += 1
@@ -88,14 +90,14 @@ class Table(object):
         for tile in tiles:
             self._add_revealed_tile(tile)
 
-    def add_called_riichi(self, player_seat):
+    def add_called_riichi(self, player_seat: int):
         self.get_player(player_seat).in_riichi = True
 
         # we had to check will we go for defence or not
         if player_seat != 0:
             self.player.enemy_called_riichi()
 
-    def add_discarded_tile(self, player_seat, tile, is_tsumogiri):
+    def add_discarded_tile(self, player_seat: int, tile: int, is_tsumogiri: bool):
         """
         :param player_seat:
         :param tile: 136 format tile
@@ -109,14 +111,14 @@ class Table(object):
         # cache already revealed tiles
         self._add_revealed_tile(tile.value)
 
-    def add_dora_indicator(self, tile):
+    def add_dora_indicator(self, tile: int):
         self.dora_indicators.append(tile)
         self._add_revealed_tile(tile)
 
-    def is_dora(self, tile):
+    def is_dora(self, tile: int):
         return plus_dora(tile, self.dora_indicators) or is_aka_dora(tile)
 
-    def set_players_scores(self, scores, uma=None):
+    def set_players_scores(self, scores: int, uma: Optional[int] = None):
         for i in range(0, len(scores)):
             self.get_player(i).scores = scores[i] * 100
 
@@ -131,12 +133,12 @@ class Table(object):
             temp_player = temp_players[i]
             self.get_player(temp_player.seat).position = i + 1
 
-    def set_players_names_and_ranks(self, values):
+    def set_players_names_and_ranks(self, values: List[Dict]):
         for x in range(0, len(values)):
             self.get_player(x).name = values[x]['name']
             self.get_player(x).rank = values[x]['rank']
 
-    def get_player(self, player_seat):
+    def get_player(self, player_seat: int):
         return self.players[player_seat]
 
     def get_players_sorted_by_scores(self):
@@ -160,11 +162,11 @@ class Table(object):
         """
         return self.players[1:]
 
-    def _add_revealed_tile(self, tile):
+    def _add_revealed_tile(self, tile: int):
         tile //= 4
         self.revealed_tiles[tile] += 1
 
-    def _init_players(self,):
+    def _init_players(self):
         self.player = Player(self, 0, self.dealer_seat, self.previous_ai)
 
         self.players = [self.player]
