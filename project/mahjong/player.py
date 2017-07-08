@@ -5,6 +5,7 @@ import copy
 
 from mahjong.ai.defence.enemy_analyzer import EnemyAnalyzer
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
+from mahjong.table import Table
 from mahjong.meld import Meld
 from mahjong.tile import TilesConverter, Tile
 from utils.settings_handler import settings
@@ -13,16 +14,15 @@ logger = logging.getLogger('tenhou')
 
 
 class PlayerInterface(object):
-    table = None
-    discards = None
-    melds = None
-    in_riichi = None
+    discards = []  # type: List[int]
+    melds = []  # type: List[Meld]
+    in_riichi = False
     seat = 0
     # where is sitting dealer, based on this information we can calculate player wind
     dealer_seat = 0
     # position based on scores
     position = 0
-    scores = None
+    scores = None  # type: Optional[int]
     uma = 0
 
     name = ''
@@ -30,7 +30,7 @@ class PlayerInterface(object):
 
     previous_ai = False
 
-    def __init__(self, table, seat, dealer_seat, previous_ai):
+    def __init__(self, table: Table, seat: int, dealer_seat: int, previous_ai):
         self.table = table
         self.seat = seat
         self.dealer_seat = dealer_seat
