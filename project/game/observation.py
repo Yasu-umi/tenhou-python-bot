@@ -8,10 +8,17 @@ from mahjong.player import PlayerInterface
 
 
 class PlayerObservation(object):
-    def __init__(self, player: PlayerInterface, tiles: Optional[List[int]]):
+    seat = 0
+    scores = 0
+    melds = []  # type: List[Meld]
+
+    def __init__(self, player: PlayerInterface, tiles: Optional[List[int]], new_tile: Optional[int]):
         self.seat = player.seat
         self.scores = player.scores
+        if player.melds is not None:
+            self.melds = player.melds
         self.tiles = tiles
+        self.new_tile = new_tile
 
 
 class Observation(object):
