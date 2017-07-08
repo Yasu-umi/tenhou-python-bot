@@ -10,10 +10,10 @@ class DiscardEvent(object):
         self.meld_tiles = None
 
 
-class ReachEvent(object):
+class RiichiEvent(object):
     def __init__(self, player_seat: int, discard_tile: int):
         self.player_seat = player_seat
-        self.type = 'reach'
+        self.type = 'riichi'
         self.discard_tile = discard_tile
         self.meld_tiles = None
 
@@ -34,10 +34,26 @@ class ChiEvent(object):
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class KanEvent(object):
+class AnKanEvent(object):
     def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
         self.player_seat = player_seat
-        self.type = 'kan'
+        self.type = 'ankan'
+        self.discard_tile = discard_tile
+        self.meld_tiles = (meld_tile1, meld_tile2)
+
+
+class MinKanEvent(object):
+    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_seat = player_seat
+        self.type = 'minkan'
+        self.discard_tile = discard_tile
+        self.meld_tiles = (meld_tile1, meld_tile2)
+
+
+class KaKanEvent(object):
+    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_seat = player_seat
+        self.type = 'kakan'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
@@ -69,7 +85,9 @@ class NoneEvent(object):
 MeldEvent = Union[
     PonEvent,
     ChiEvent,
-    KanEvent
+    AnKanEvent,
+    MinKanEvent,
+    KaKanEvent,
 ]
 
 EndEvent = Union[
@@ -79,7 +97,7 @@ EndEvent = Union[
 
 Event = Union[
     DiscardEvent,
-    ReachEvent,
+    RiichiEvent,
     MeldEvent,
     EndEvent,
     NoneEvent
