@@ -13,3 +13,21 @@ class ClientInterface(object):
       observation: Observation
     ) -> Event:
         return random.choice(events)
+
+
+class GameClient(object):
+    scores = 0
+    seat = 0
+    in_riichi = False
+
+    tiles = []  # type: List[int]
+
+    def __init__(self, client: ClientInterface):
+        self.client = client
+
+    def action(
+      self,
+      events: List[Event],
+      observation: Observation
+    ) -> Event:
+        return self.client.action(events, observation)
