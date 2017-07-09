@@ -16,6 +16,9 @@ class GameTable(object):
 
     dora_indexes = [0]  # type: List[int]
 
+    end_round = False
+    end_game = False
+
     def __init__(
         self,
         client1=ClientInterface,
@@ -36,6 +39,24 @@ class GameTable(object):
         self.is_aka = is_aka
 
         self._init_round()
+
+    def next_action(self) -> bool:
+        """
+        GameTableの初期化後このメソッドを呼んでください
+        Trueが返る間はroundが続いており、next_actionを呼ぶ事でゲームが進みます
+        """
+        if self.end_round:
+            return False
+        return True
+
+    def next_round(self) -> bool:
+        """
+        next_actionがFalseを返すとroundが終わっているので、このメソッドを呼んで次のroundを始めてください
+        Trueが返る間はroundが続いており、Falseが返るとgameが終了します
+        """
+        if self.end_game:
+            return False
+        return True
 
     @property
     def clients(self) -> List[GameClient]:
