@@ -2,9 +2,6 @@
 from typing import Union
 
 
-class DiscardEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int):
-        self.player_seat = player_seat
 class EventBase(object):
     player_id = 0
     type = ''
@@ -16,78 +13,97 @@ class EventBase(object):
         return self.type == 'tsumo' or self.type == 'ron' or self.type == 'chan_kan'
 
 
+class DiscardEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int):
+        self.player_id = player_id
         self.type = 'discard'
         self.discard_tile = discard_tile
         self.meld_tiles = None
 
 
-class RiichiEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int):
-        self.player_seat = player_seat
+class RiichiEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int):
+        self.player_id = player_id
         self.type = 'riichi'
         self.discard_tile = discard_tile
         self.meld_tiles = None
 
 
-class PonEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
-        self.player_seat = player_seat
+class PonEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_id = player_id
         self.type = 'pon'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class ChiEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
-        self.player_seat = player_seat
+class ChiEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_id = player_id
         self.type = 'chi'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class AnKanEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
-        self.player_seat = player_seat
-        self.type = 'ankan'
+class AnKanEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_id = player_id
+        self.type = 'an_kan'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class MinKanEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
-        self.player_seat = player_seat
-        self.type = 'minkan'
+class MinKanEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_id = player_id
+        self.type = 'min_kan'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class KaKanEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
-        self.player_seat = player_seat
-        self.type = 'kakan'
+class KaKanEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int):
+        self.player_id = player_id
+        self.type = 'ka_kan'
         self.discard_tile = discard_tile
         self.meld_tiles = (meld_tile1, meld_tile2)
 
 
-class AgariEvent(object):
-    def __init__(self, player_seat: int):
-        self.player_seat = player_seat
-        self.type = 'agari'
+class TsumoEvent(EventBase):
+    def __init__(self, player_id: int):
+        self.player_id = player_id
+        self.type = 'tsumo'
         self.discard_tile = None
         self.meld_tiles = None
 
 
-class ChankanEvent(object):
-    def __init__(self, player_seat: int, discard_tile: int):
-        self.player_seat = player_seat
-        self.type = 'chankan'
+class RonEvent(EventBase):
+    def __init__(self, player_id: int):
+        self.player_id = player_id
+        self.type = 'ron'
         self.discard_tile = None
         self.meld_tiles = None
 
 
-class NoneEvent(object):
-    def __init__(self, player_seat: int):
-        self.player_seat = player_seat
+class ChanKanEvent(EventBase):
+    def __init__(self, player_id: int, discard_tile: int):
+        self.player_id = player_id
+        self.type = 'chan_kan'
+        self.discard_tile = None
+        self.meld_tiles = None
+
+
+class KyushuKyuhaiEvent(EventBase):
+    def __init__(self, player_id: int):
+        self.player_id = player_id
+        self.type = 'kyushu_kyuhai'
+        self.discard_tile = None
+        self.meld_tiles = None
+
+
+class NoneEvent(EventBase):
+    def __init__(self, player_id: int):
+        self.player_id = player_id
         self.type = 'none'
         self.discard_tile = None
         self.meld_tiles = None
@@ -101,15 +117,17 @@ MeldEvent = Union[
     KaKanEvent,
 ]
 
-EndEvent = Union[
-    AgariEvent,
-    ChankanEvent
+AgariEvent = Union[
+    TsumoEvent,
+    RonEvent,
+    ChanKanEvent,
 ]
 
 Event = Union[
     DiscardEvent,
     RiichiEvent,
     MeldEvent,
-    EndEvent,
-    NoneEvent
+    AgariEvent,
+    KyushuKyuhaiEvent,
+    NoneEvent,
 ]
