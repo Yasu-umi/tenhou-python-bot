@@ -18,13 +18,15 @@ class ClientInterface(object):
 
 
 class GameClient(object):
+    id = 0
     scores = 0
     seat = 0
     in_riichi = False
 
     tiles = []  # type: List[int]
 
-    def __init__(self, client: ClientInterface):
+    def __init__(self, id: int, client: ClientInterface):
+        self.id = id
         self.client = client
 
     def action(
@@ -33,3 +35,14 @@ class GameClient(object):
       observation: Observation
     ) -> Event:
         return self.client.action(events, observation)
+
+    @staticmethod
+    def player_wind(dealer_seat):
+        if dealer_seat == 0:
+            return EAST
+        elif dealer_seat == 1:
+            return NORTH
+        elif dealer_seat == 2:
+            return WEST
+        else:
+            return SOUTH
