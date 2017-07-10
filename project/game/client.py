@@ -2,8 +2,10 @@
 import random
 from typing import List
 
-from .event import Event
-from .observation import Observation
+from game.event import Event
+from game.observation import Observation
+
+from mahjong.constants import EAST, SOUTH, WEST, NORTH
 
 
 class ClientInterface(object):
