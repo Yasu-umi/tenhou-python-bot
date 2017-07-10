@@ -5,6 +5,17 @@ from typing import Union
 class DiscardEvent(object):
     def __init__(self, player_seat: int, discard_tile: int):
         self.player_seat = player_seat
+class EventBase(object):
+    player_id = 0
+    type = ''
+    discard_tile = None  # type: Optional[int]
+    meld_tiles = None  # type: Optional[List[int]]
+
+    @property
+    def is_agari(self) -> bool:
+        return self.type == 'tsumo' or self.type == 'ron' or self.type == 'chan_kan'
+
+
         self.type = 'discard'
         self.discard_tile = discard_tile
         self.meld_tiles = None
