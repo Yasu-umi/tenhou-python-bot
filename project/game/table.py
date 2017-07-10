@@ -90,12 +90,12 @@ class GameTable(object):
         for (i, client) in enumerate(self.clients):
             self.client.scores = scores[i]
 
-    def _set_yama_and_wanpai(self):
-        hais = range(135)
+    def _set_yama(self):
+        hais = list(range(135))
         random.shuffle(hais)
-        self.rinshanhai = hais[0:3]
-        self.wanpai = hais[3:13]
-        self.yama = hais[13:]
+        self.rinshanhai = hais[0:4]
+        self.wanpai = hais[4:14]
+        self.yama = hais[14:]
 
     def _set_initial_seats(self):
         seats = random.shuffle(range(4))
