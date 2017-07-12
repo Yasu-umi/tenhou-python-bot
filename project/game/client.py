@@ -45,8 +45,8 @@ class GameClient(object):
     seat = 0
     in_riichi = False
 
-    tiles = []  # type: List[int]
-    melds = []  # type: List[Meld]
+    tiles: List[int] = []
+    melds: List['Meld'] = []
 
     def __init__(self, id: int, client: 'ClientInterface'):
         self.id = id

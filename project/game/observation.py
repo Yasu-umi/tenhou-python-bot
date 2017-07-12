@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class PlayerObservation(object):
     seat = 0
     scores = 0
-    melds = []  # type: List[Meld]
+    melds: List['Meld'] = []
 
     def __init__(
         self,

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from typing import Union
+from typing import Union, Optional, List
 
 
 class EventBase(object):
     player_id = 0
     type = ''
-    discard_tile = None  # type: Optional[int]
-    meld_tiles = None  # type: Optional[List[int]]
+    discard_tile:  Optional[int] = None
+    meld_tiles: Optional[List[int]] = None
 
     @property
     def is_agari(self) -> bool:

@@ -5,6 +5,7 @@ from typing import List
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
 from game.client import ClientInterface, GameClient
+from game.event import Event
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
@@ -16,13 +17,13 @@ class GameTable(object):
     count_of_honba_sticks = 0
     dealer_seat = 0
 
-    selected_events = []  # type: List[Event]
+    selected_events:  List[Event] = []
 
-    rinshanhai = []  # type: List[int]
-    wanpai = []  # type: List[int]
-    yama = []  # type: List[int]
+    rinshanhai: List[int] = []
+    wanpai: List[int] = []
+    yama: List[int] = []
 
-    dora_indexes = [0]  # type: List[int]
+    dora_indexes: List[int] = []
 
     ended_round = False
     ended_game = False
