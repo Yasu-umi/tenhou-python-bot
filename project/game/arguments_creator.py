@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-from game.event import PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent, TsumoEvent, RonEvent, ChanKanEvent, DiscardEvent, RiichiEvent, KyushuKyuhaiEvent, NoneEvent
+from game.event import PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent, TsumoEvent, RonEvent, ChanKanEvent
+from game.event import DiscardEvent, RiichiEvent, KyushuKyuhaiEvent, NoneEvent
 from game.observation import Observation
 
 from mahjong.ai.agari import Agari
