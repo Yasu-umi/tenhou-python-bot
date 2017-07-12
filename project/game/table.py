@@ -4,8 +4,8 @@ from typing import List
 
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
-from game.client import ClientInterface, GameClient
-from game.event import Event
+from game.client import ClientInterface, BaseClient, GameClient
+from game.event import TsumoEvent, RonEvent, RiichiEvent, ChanKanEvent, Event
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
@@ -40,7 +40,7 @@ class GameTable(object):
             return [self.wanpai[idx] for idx in self.dora_indexes]
 
     @property
-    def round_wind(self):
+    def round_wind(self) -> None:
         if self.round_number < 4:
             return EAST
         elif 4 <= self.round_number < 8:
@@ -52,14 +52,14 @@ class GameTable(object):
 
     def __init__(
         self,
-        client0=ClientInterface(),
-        client1=ClientInterface(),
-        client2=ClientInterface(),
-        client3=ClientInterface(),
-        is_hanchan=True,
-        is_open_tanyao=True,
-        is_aka=True,
-    ):
+        client0: ClientInterface = BaseClient(),
+        client1: ClientInterface = BaseClient(),
+        client2: ClientInterface = BaseClient(),
+        client3: ClientInterface = BaseClient(),
+        is_hanchan: bool = True,
+        is_open_tanyao: bool = True,
+        is_aka: bool = True,
+    ) -> None:
         self.client0 = GameClient(id=0, client=client0)
         self.client1 = GameClient(id=1, client=client1)
         self.client2 = GameClient(id=2, client=client2)
@@ -111,13 +111,13 @@ class GameTable(object):
 
     def _init_round(
         self,
-        round_number=0,
-        count_of_riichi_sticks=0,
-        count_of_honba_sticks=0,
-        dealer_seat=0,
-        seats=[0, 1, 2, 3],
-        scores=[25000, 25000, 25000, 25000],
-    ):
+        round_number: int = 0,
+        count_of_riichi_sticks: int = 0,
+        count_of_honba_sticks: int = 0,
+        dealer_seat: int = 0,
+        seats: List[int] = [0, 1, 2, 3],
+        scores: List[int] = [25000, 25000, 25000, 25000],
+    ) -> None:
         self.round_number = round_number
         self.count_of_riichi_sticks = count_of_riichi_sticks
         self.count_of_honba_sticks = count_of_honba_sticks
@@ -134,31 +134,31 @@ class GameTable(object):
         self._set_yama()
         self._haipai()
 
-    def _init_riichi(self):
+    def _init_riichi(self) -> None:
         for client in self.clients:
             client.in_riichi = False
 
-    def _set_seats(self, seats=[0, 1, 2, 3]):
+    def _set_seats(self, seats: List[int] = [0, 1, 2, 3]) -> None:
         for (i, client) in enumerate(self.clients):
             client.seat = seats[i]
 
-    def _set_scores(self, scores=[25000, 25000, 25000, 25000]):
+    def _set_scores(self, scores: List[int] = [25000, 25000, 25000, 25000]) -> None:
         for (i, client) in enumerate(self.clients):
             client.scores = scores[i]
 
-    def _set_yama(self):
+    def _set_yama(self) -> None:
         hais = list(range(135))
         random.shuffle(hais)
         self.rinshanhai = hais[0:4]
         self.wanpai = hais[4:14]
         self.yama = hais[14:]
 
-    def _haipai(self):
+    def _haipai(self) -> None:
         for (i, client) in enumerate(self.clients):
             client.tiles = self.yama[i * 13:(i + 1) * 13]
         self.yama = self.yama[52:]
 
-    def _update_ended_round(self):
+    def _update_ended_round(self) -> None:
         last_event = self.selected_events[-1] if len(self.selected_events) > 0 else None
         if len(self.yama) == 0 or (last_event is not None and last_event.is_agari):
             self.ended_round = True
@@ -166,7 +166,7 @@ class GameTable(object):
     def _get_next_dealer_seat(self) -> int:
         return self.dealer_seat + 1 if self.dealer_seat < 3 else 0
 
-    def _calc_scores(self):
+    def _calc_scores(self) -> List[int]:
         scores = [client.scores for client in self.clients]
         hand = FinishedHand()
         for client in sorted(self.clients, key=lambda x: x.seat):
@@ -183,12 +183,12 @@ class GameTable(object):
             res = hand.estimate_hand_value(
                 tiles=client.tiles + [last_event.discard_tile],
                 win_tile=last_event.discard_tile,
-                is_tsumo=win_event.type == 'tsumo',
+                is_tsumo=isinstance(win_event, TsumoEvent),
                 is_riichi=client.in_riichi,
                 is_dealer=client.seat == self.dealer_seat,
-                is_ippatsu=last_event.player_id == client.id and last_event.type == 'riichi',
+                is_ippatsu=last_event.player_id == client.id and isinstance(last_event, RiichiEvent),
                 is_rinshan=False,
-                is_chankan=win_event.type == 'chan_kan',
+                is_chankan=isinstance(win_event, ChanKanEvent),
                 is_haitei=False,
                 is_houtei=False,
                 is_daburu_riichi=False,
@@ -204,10 +204,10 @@ class GameTable(object):
             )
 
             if res['cost'] is not None:
-                if win_event.type == 'ron':
+                if isinstance(win_event, RonEvent):
                     scores[win_event.player_id] += res['cost']['main']
                     scores[last_event.player_id] -= res['cost']['main']
-                elif win_event.type == 'tsumo':
+                elif isinstance(win_event, TsumoEvent):
                     for client in self.clients:
                         if client.id == win_event.player_id:
                             scores[client.id] += (3 * res['cost']['main']) + res['cost']['additional']
@@ -217,6 +217,6 @@ class GameTable(object):
                             scores[client.id] -= res['cost']['main']
         return scores
 
-    def _update_ended_game(self, next_dealer_seat=0):
+    def _update_ended_game(self, next_dealer_seat: int = 0) -> None:
         self.round_number += 1
         self.ended_game = self.round_number == 8

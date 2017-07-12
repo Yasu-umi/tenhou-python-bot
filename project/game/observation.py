@@ -3,8 +3,9 @@ from typing import List, Optional
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from game.event import Event
-    from mahjong.meld import Meld
+    from game.client import GameClient  # noqa
+    from game.event import Event  # noqa
+    from mahjong.meld import Meld  # noqa
 
 
 class PlayerObservation(object):
@@ -19,7 +20,7 @@ class PlayerObservation(object):
         tiles: Optional[List[int]],
         melds: List['Meld'] = [],
         new_tile: Optional[int] = None
-    ):
+    ) -> None:
         self.seat = seat
         self.scores = scores
         self.tiles = tiles
@@ -27,16 +28,70 @@ class PlayerObservation(object):
         self.new_tile = new_tile
 
 
+class OwnPlayer(PlayerObservation):
+    tiles: List[int] = []
+
+    def __init__(
+        self,
+        seat: int,
+        scores: int,
+        tiles: List[int],
+        melds: List['Meld'] = [],
+        new_tile: Optional[int] = None
+    ) -> None:
+        self.seat = seat
+        self.scores = scores
+        self.tiles = tiles
+        self.melds = melds
+        self.new_tile = new_tile
+
+    @staticmethod
+    def from_game_client(client: 'GameClient', new_tile: Optional[int]) -> 'OwnPlayer':
+        return OwnPlayer(
+            seat=client.seat,
+            scores=client.scores,
+            tiles=client.tiles,
+            melds=client.melds,
+            new_tile=new_tile,
+        )
+
+
+class EnemyPlayer(PlayerObservation):
+    tiles: None = None
+
+    def __init__(
+        self,
+        seat: int,
+        scores: int,
+        tiles: None = None,
+        melds: List['Meld'] = [],
+        new_tile: Optional[int] = None
+    ) -> None:
+        self.seat = seat
+        self.scores = scores
+        self.tiles = tiles
+        self.melds = melds
+        self.new_tile = new_tile
+
+    @staticmethod
+    def from_game_client(client: 'GameClient') -> 'EnemyPlayer':
+        return EnemyPlayer(
+            seat=client.seat,
+            scores=client.scores,
+            melds=client.melds,
+        )
+
+
 class Observation(object):
     def __init__(
         self,
-        player: PlayerObservation,
+        player: OwnPlayer,
         players: List[PlayerObservation],
         dealer_seat: int,
         count_of_riichi_sticks: int,
         count_of_honba_sticks: int,
         events: List['Event'],
-    ):
+    ) -> None:
         self.player = player
         self.players = players
         self.dealer_seat = dealer_seat

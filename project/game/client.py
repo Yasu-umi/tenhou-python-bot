@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
+import random
 from typing import List
-
-from game.observation import PlayerObservation
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
 from mahjong.ai.shanten import Shanten
@@ -10,18 +9,28 @@ from mahjong.tile import TilesConverter
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from game.event import Event
-    from game.observation import Observation
-    from mahjong.meld import Meld
+    from game.event import Event  # noqa
+    from game.observation import Observation  # noqa
+    from mahjong.meld import Meld  # noqa
 
 
 class ClientInterface(object):
+    def action(
+      self,
+      events: List['Event'],
+      _observation: 'Observation'
+    ) -> 'Event':
+        return random.choice(events)
+
+
+class BaseClient(ClientInterface):
     def _calculate_shanten(self, _observation: 'Observation', event: 'Event') -> int:
         shanten = Shanten()
         tiles = copy.deepcopy(_observation.player.tiles)
         if _observation.player.new_tile is not None:
             tiles.append(_observation.player.new_tile)
-        tiles.remove(event.discard_tile)
+        if event.discard_tile is not None:
+            tiles.remove(event.discard_tile)
         tiles_34 = TilesConverter.to_34_array(tiles)
         return shanten.calculate_shanten(tiles_34=tiles_34)
 
@@ -48,7 +57,7 @@ class GameClient(object):
     tiles: List[int] = []
     melds: List['Meld'] = []
 
-    def __init__(self, id: int, client: 'ClientInterface'):
+    def __init__(self, id: int, client: 'ClientInterface') -> None:
         self.id = id
         self.client = client
 
@@ -59,22 +68,13 @@ class GameClient(object):
     ) -> 'Event':
         return self.client.action(events=events, _observation=_observation)
 
-    def to_player_observation(self, new_tile: int) -> 'PlayerObservation':
-        return PlayerObservation(
-            seat=self.seat,
-            scores=self.scores,
-            tiles=self.tiles,
-            melds=self.melds,
-            new_tile=new_tile,
-        )
-
     @property
     def is_open_hand(self) -> bool:
         opened_melds = [x for x in self.melds if x.opened]
         return len(opened_melds) > 0
 
     @staticmethod
-    def player_wind(dealer_seat) -> int:
+    def player_wind(dealer_seat: int) -> int:
         if dealer_seat == 0:
             return EAST
         elif dealer_seat == 1:

@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
-from typing import List
+from typing import List, Tuple
 
-from game.event import PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent, TsumoEvent, RonEvent, ChanKanEvent
-from game.event import DiscardEvent, RiichiEvent, KyushuKyuhaiEvent, NoneEvent
-from game.observation import Observation
+from game.event import (PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent,
+                        DiscardEvent, RiichiEvent, TsumoEvent, RonEvent, ChanKanEvent, KyushuKyuhaiEvent, NoneEvent)
+from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
 from mahjong.tile import TilesConverter
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from game.client import GameClient
-    from game.event import Event
-    from game.table import GameTable
-    from mahjong.meld import Meld
+    from game.client import GameClient  # noqa
+    from game.event import Event  # noqa
+    from game.observation import PlayerObservation  # noqa
+    from game.table import GameTable  # noqa
+    from mahjong.meld import Meld  # noqa
 
 
 class ArgumentsCreator:
     @staticmethod
-    def create(table: 'GameTable') -> ('Observation', List['Event'], 'GameClient'):
+    def create(table: 'GameTable') -> Tuple['Observation', List['Event'], 'GameClient']:
         last_event = table.selected_events[-1] if len(table.selected_events) > 0 else None
-        events = []
+        events: List[Event] = []
         if last_event is None:
             action_client = table.client0
             new_tile = table.yama.pop()
@@ -52,10 +53,11 @@ class ArgumentsCreator:
             action_client = table.clients[next_player_id]
             events = ArgumentsCreator._add_discard_events(events=events, action_client=action_client, new_tile=new_tile)
             events = ArgumentsCreator._add_agari_events(events=events, action_client=action_client, new_tile=new_tile)
-        player = action_client.to_player_observation(new_tile)
+        player = OwnPlayer.from_game_client(action_client, new_tile)
         clients = table.clients
         clients.remove(action_client)
-        players = [client.to_player_observation(None) for client in clients] + [player]
+        players: List['PlayerObservation'] = [EnemyPlayer.from_game_client(client) for client in clients]
+        players = players + [player]
         _observation = Observation(
             player=player,
             players=players,
@@ -67,16 +69,16 @@ class ArgumentsCreator:
         return _observation, events, action_client
 
     @staticmethod
-    def _add_discard_events(events: List['Event'], action_client: 'GameClient', new_tile=int) -> List['Event']:
-        discard_events = [
+    def _add_discard_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+        discard_events: List['Event'] = [
             DiscardEvent(player_id=action_client.id, discard_tile=discard_tile)
             for discard_tile in action_client.tiles + [new_tile]
         ]
         return events + discard_events
 
     @staticmethod
-    def _add_agari_events(events: List['Event'], action_client: 'GameClient', new_tile=int) -> List['Event']:
-        agari_events = []
+    def _add_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+        agari_events: List['Event'] = []
         is_agari = ArgumentsCreator._is_agari(tiles=action_client.tiles + [new_tile], melds=action_client.melds)
         if is_agari:
             agari_events.append(TsumoEvent(player_id=action_client.id))

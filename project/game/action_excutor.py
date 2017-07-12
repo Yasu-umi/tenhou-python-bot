@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-from game.event import PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent, TsumoEvent, RonEvent, ChanKanEvent
-from game.event import DiscardEvent, RiichiEvent, KyushuKyuhaiEvent, NoneEvent
+from game.event import (PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent,
+                        DiscardEvent, RiichiEvent, TsumoEvent, RonEvent, ChanKanEvent, KyushuKyuhaiEvent, NoneEvent)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from game.client import GameClient
-    from game.event import Event
-    from game.observation import Observation
-    from game.table import GameTable
+    from game.client import GameClient  # noqa
+    from game.event import HasDiscardTileEvent, Event  # noqa
+    from game.observation import Observation  # noqa
+    from game.table import GameTable  # noqa
 
 
 class ActionExcutor:
@@ -19,41 +19,60 @@ class ActionExcutor:
         selected_event: 'Event',
     ) -> bool:
         if isinstance(selected_event, DiscardEvent):
-            method = ActionExcutor._execute_discard
+            return ActionExcutor._execute_discard(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, RiichiEvent):
-            method = ActionExcutor._execute_riichi
+            return ActionExcutor._execute_riichi(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, PonEvent):
-            method = ActionExcutor._execute_pon
+            return ActionExcutor._execute_pon(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, ChiEvent):
-            method = ActionExcutor._execute_chi
+            return ActionExcutor._execute_chi(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, AnKanEvent):
-            method = ActionExcutor._execute_an_kan
+            return ActionExcutor._execute_an_kan(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, MinKanEvent):
-            method = ActionExcutor._execute_min_kan
+            return ActionExcutor._execute_min_kan(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, KaKanEvent):
-            method = ActionExcutor._execute_ka_kan
+            return ActionExcutor._execute_ka_kan(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, TsumoEvent):
-            method = ActionExcutor._execute_tsumo
+            return ActionExcutor._execute_tsumo(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, RonEvent):
-            method = ActionExcutor._execute_ron
+            return ActionExcutor._execute_ron(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, ChanKanEvent):
-            method = ActionExcutor._execute_chan_kan
+            return ActionExcutor._execute_chan_kan(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, KyushuKyuhaiEvent):
-            method = ActionExcutor._execute_kyushu_kyuhai
+            return ActionExcutor._execute_kyushu_kyuhai(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
         elif isinstance(selected_event, NoneEvent):
             return False
         else:
             raise 'NotFoundEvent'
-        return method(
-            table=table, client=client, _observation=_observation, selected_event=selected_event
-        )
 
     @staticmethod
     def _execute_discard(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'DiscardEvent',
     ) -> bool:
         ActionExcutor._discard(client=client, _observation=_observation, selected_event=selected_event)
         return False
@@ -63,7 +82,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'RiichiEvent',
     ) -> bool:
         if len([client for client in table.clients if client.in_riichi]) == 3:
             return True
@@ -78,7 +97,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'PonEvent',
     ) -> bool:
         return False
 
@@ -87,7 +106,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'ChiEvent',
     ) -> bool:
         return False
 
@@ -96,7 +115,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'AnKanEvent',
     ) -> bool:
         return False
 
@@ -105,7 +124,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'MinKanEvent',
     ) -> bool:
         return False
 
@@ -114,7 +133,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'KaKanEvent',
     ) -> bool:
         return False
 
@@ -123,7 +142,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'TsumoEvent',
     ) -> bool:
         return True
 
@@ -132,7 +151,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'RonEvent',
     ) -> bool:
         return True
 
@@ -141,7 +160,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'ChanKanEvent',
     ) -> bool:
         return False
 
@@ -150,7 +169,7 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'KyushuKyuhaiEvent',
     ) -> bool:
         return False
 
@@ -159,18 +178,21 @@ class ActionExcutor:
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'Event',
+        selected_event: 'NoneEvent',
     ) -> bool:
         return False
 
     @staticmethod
-    def _discard(client: 'GameClient', _observation: 'Observation', selected_event: 'Event'):
+    def _discard(client: 'GameClient', _observation: 'Observation', selected_event: 'HasDiscardTileEvent') -> None:
         if _observation.player.new_tile == selected_event.discard_tile:
             client.tiles = _observation.player.tiles
         elif selected_event.discard_tile in _observation.player.tiles:
             tiles = _observation.player.tiles
             tiles.remove(selected_event.discard_tile)
-            tiles.append(_observation.player.new_tile)
+            if _observation.player.new_tile is not None:
+                tiles.append(_observation.player.new_tile)
+            else:
+                raise 'NotFoundNewTile'
             client.tiles = tiles
         else:
             raise 'NotFoundDiscardTile'
