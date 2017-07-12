@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
-
 import copy
+from typing import List
 
 from mahjong.utils import find_isolated_tile_indices
 
@@ -18,7 +18,7 @@ class Shanten(object):
     number_isolated_tiles = 0
     min_shanten = 0
 
-    def calculate_shanten(self, tiles_34, open_sets_34=None):
+    def calculate_shanten(self, tiles_34: List[int], open_sets_34=None) -> int:
         """
         Return the count of tiles before tempai
         :param tiles_34: 34 tiles format array

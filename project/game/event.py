@@ -10,7 +10,12 @@ class EventBase(object):
 
     @property
     def is_agari(self) -> bool:
-        return self.type == 'tsumo' or self.type == 'ron' or self.type == 'chan_kan'
+        return isinstance(self, TsumoEvent) or isinstance(self, RonEvent) or isinstance(self, ChanKanEvent)
+
+    def __str__(self):
+        return "player_id: {}, type: {}, discard_tile: {}, meld_tiles: {}".format(
+            self.player_id, self.type, self.discard_tile, self.meld_tiles
+        )
 
 
 class DiscardEvent(EventBase):

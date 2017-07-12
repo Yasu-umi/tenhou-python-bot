@@ -3,10 +3,13 @@ import random
 from typing import List
 
 from game.client import ClientInterface, GameClient
-from game.event import Event, DiscardEvent
+from game.event import PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent, TsumoEvent, RonEvent, ChanKanEvent, DiscardEvent, RiichiEvent, MeldEvent, KyushuKyuhaiEvent, NoneEvent, MeldEvent, AgariEvent, Event
 from game.observation import Observation
 
 from mahjong.hand import FinishedHand
+from mahjong.tile import TilesConverter
+from mahjong.meld import Meld
+from mahjong.ai.agari import Agari
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 
 
@@ -24,8 +27,8 @@ class GameTable(object):
 
     dora_indexes = [0]  # type: List[int]
 
-    end_round = False
-    end_game = False
+    ended_round = False
+    ended_game = False
 
     def __init__(
         self,
@@ -53,7 +56,8 @@ class GameTable(object):
         GameTableの初期化後このメソッドを呼んでください
         Trueが返る間はroundが続いており、next_actionを呼ぶ事でゲームが進みます
         """
-        if self.end_round:
+        self._update_ended_round()
+        if self.ended_round:
             return False
 
         _observation, events, client = self._create_events_and_observation()
@@ -61,9 +65,14 @@ class GameTable(object):
         selected_event = client.action(_observation=_observation, events=events)
         self.selected_events.append(selected_event)
 
-        self.end_round = self._execute_action(client=client, _observation=_observation, selected_event=selected_event)
+        self.ended_round = self._execute_action(client=client, _observation=_observation, selected_event=selected_event)
 
-        return not self.end_round
+        return not self.ended_round
+
+    def _update_ended_round(self):
+        last_event = self.selected_events[-1] if len(self.selected_events) > 0 else None
+        if len(self.yama) == 0 or (last_event is not None and last_event.is_agari):
+            self.ended_round = True
 
     def _create_events_and_observation(self) -> (Observation, List[Event], GameClient):
         last_event = self.selected_events[-1] if len(self.selected_events) > 0 else None
@@ -76,17 +85,29 @@ class GameTable(object):
                 for discard_tile in action_client.tiles + [new_tile]
             ]
             events.extend(discard_events)
-        elif last_event.type == 'ron' or last_event.type == 'tsumo':
+
+            is_agari = self._is_agari(tiles=action_client.tiles + [new_tile], melds=action_client.melds)
+            if is_agari:
+                events.append(TsumoEvent(player_id=action_client.id))
+        elif isinstance(last_event, RonEvent) or isinstance(last_event, TsumoEvent):
             raise 'ThisRoundAlreadyEnds'
+        elif isinstance(last_event, DiscardEvent):
+            next_player_id = 0 if 2 < last_event.player_id else last_event.player_id + 1
+            action_client = self.clients[next_player_id]
+            new_tile = last_event.discard_tile
+            is_agari = self._is_agari(tiles=action_client.tiles + [new_tile], melds=action_client.melds)
+            if is_agari:
+                events.append(TsumoEvent(player_id=action_client.id))
+            else:
+                new_tile = self.yama.pop()
+                events = self._add_discard_events(
+                    events=events, action_client=action_client, new_tile=new_tile
+                )
         else:
             next_player_id = 0 if 2 < last_event.player_id else last_event.player_id + 1
             action_client = self.clients[next_player_id]
-            new_tile = self.yama.pop()
-            discard_events = [
-                DiscardEvent(player_id=action_client.id, discard_tile=discard_tile)
-                for discard_tile in action_client.tiles + [new_tile]
-            ]
-            events.extend(discard_events)
+            events = self._add_discard_events(events=events, action_client=action_client, new_tile=new_tile)
+            events = self._add_agari_events(events=events, action_client=action_client, new_tile=new_tile)
         player = action_client.to_player_observation(new_tile)
         clients = self.clients
         clients.remove(action_client)
@@ -101,30 +122,49 @@ class GameTable(object):
         )
         return _observation, events, action_client
 
+    def _add_discard_events(self, events: List[Event], action_client=GameClient, new_tile=int) -> List[Event]:
+        discard_events = [
+            DiscardEvent(player_id=action_client.id, discard_tile=discard_tile)
+            for discard_tile in action_client.tiles + [new_tile]
+        ]
+        return events + discard_events
+
+    def _add_agari_events(self, events: List[Event], action_client=GameClient, new_tile=int) -> List[Event]:
+        agari_events = []
+        is_agari = self._is_agari(tiles=action_client.tiles + [new_tile], melds=action_client.melds)
+        if is_agari:
+            agari_events.append(TsumoEvent(player_id=action_client.id))
+        return events + agari_events
+
+    def _is_agari(self, tiles: List[int], melds: List[Meld]) -> bool:
+        _melds = [TilesConverter.to_34_array(meld.tiles) for meld in melds]
+        agari = Agari()
+        return agari.is_agari(tiles=TilesConverter.to_34_array(tiles), melds=_melds)
+
     def _execute_action(self, client: GameClient, _observation: Observation, selected_event: Event) -> bool:
-        if selected_event.type == 'discard':
+        if isinstance(selected_event, DiscardEvent):
             return self._execute_discard(client=client, _observation=_observation, selected_event=selected_event)
-        elif selected_event.type == 'riichi':
+        elif isinstance(selected_event, RiichiEvent):
             return self._execute_riichi(client=client, _observation=_observation, selected_event=selected_event)
-        elif selected_event.type == 'pon':
+        elif isinstance(selected_event, PonEvent):
             return self._execute_pon(client=client, selected_event=selected_event)
-        elif selected_event.type == 'chi':
+        elif isinstance(selected_event, ChiEvent):
             return self._execute_chi(client=client, selected_event=selected_event)
-        elif selected_event.type == 'an_kan':
+        elif isinstance(selected_event, AnKanEvent):
             return self._execute_an_kan(client=client, selected_event=selected_event)
-        elif selected_event.type == 'min_kan':
+        elif isinstance(selected_event, MinKanEvent):
             return self._execute_min_kan(client=client, selected_event=selected_event)
-        elif selected_event.type == 'ka_kan':
+        elif isinstance(selected_event, KaKanEvent):
             return self._execute_ka_kan(client=client, selected_event=selected_event)
-        elif selected_event.type == 'tsumo':
+        elif isinstance(selected_event, TsumoEvent):
             return self._execute_tsumo()
-        elif selected_event.type == 'ron':
+        elif isinstance(selected_event, RonEvent):
             return self._execute_ron()
-        elif selected_event.type == 'chan_kan':
+        elif isinstance(selected_event, ChanKanEvent):
             return self._execute_chan_kan(client=client, selected_event=selected_event)
-        elif selected_event.type == 'kyushu_kyuhai':
+        elif isinstance(selected_event, KyushuKyuhaiEvent):
             return self._execute_kyushu_kyuhai(client=client, selected_event=selected_event)
-        elif selected_event.type == 'none':
+        elif isinstance(selected_event, NoneEvent):
             return False
         else:
             raise 'NotFoundEvent'
@@ -188,15 +228,15 @@ class GameTable(object):
         next_actionがFalseを返すとroundが終わっているので、このメソッドを呼んで次のroundを始めてください
         Trueが返る間はroundが続いており、Falseが返るとgameが終了します
         """
-        if self.end_game:
+        if self.ended_game:
             return False
         scores = self._calc_scores()
         next_dealer_seat = self._get_next_dealer_seat()
-        self._update_end_game(next_dealer_seat=next_dealer_seat)
-        if self.end_game:
+        self._update_ended_game(next_dealer_seat=next_dealer_seat)
+        if self.ended_game:
             return False
         self._init_round(scores=scores, dealer_seat=next_dealer_seat)
-        return self.end_game
+        return not self.ended_game
 
     @property
     def clients(self) -> List[GameClient]:
@@ -287,7 +327,7 @@ class GameTable(object):
                 raise 'NotFoundLastEventDiscardTile'
 
             res = hand.estimate_hand_value(
-                tiles=client.tiles,
+                tiles=client.tiles + [last_event.discard_tile],
                 win_tile=last_event.discard_tile,
                 is_tsumo=win_event.type == 'tsumo',
                 is_riichi=client.in_riichi,
@@ -323,6 +363,6 @@ class GameTable(object):
                             scores[client.id] -= res['cost']['main']
         return scores
 
-    def _update_end_game(self, next_dealer_seat=0):
+    def _update_ended_game(self, next_dealer_seat=0):
         self.round_number += 1
-        self.end_game = self.round_number == 8
+        self.ended_game = self.round_number == 8

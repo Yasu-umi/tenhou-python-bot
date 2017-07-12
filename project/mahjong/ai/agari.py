@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import copy
+from typing import List, Optional
 
 from mahjong.utils import find_isolated_tile_indices
 
 
 class Agari(object):
 
-    def is_agari(self, tiles, melds=None):
+    def is_agari(self, tiles: List[int], melds: Optional[List[List[int]]]=None) -> bool:
         """
         Determine was it win or not
         :param tiles: 34 tiles format array

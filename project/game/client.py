@@ -1,20 +1,37 @@
 # -*- coding: utf-8 -*-
-import random
+import copy
 from typing import List
 
 from game.event import Event
 from game.observation import Observation, PlayerObservation
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
+from mahjong.ai.shanten import Shanten
+from mahjong.tile import TilesConverter
 
 
 class ClientInterface(object):
+    def _calculate_shanten(self, _observation: Observation, event: Event) -> int:
+        shanten = Shanten()
+        tiles = copy.deepcopy(_observation.player.tiles)
+        if _observation.player.new_tile is not None:
+            tiles.append(_observation.player.new_tile)
+        tiles.remove(event.discard_tile)
+        tiles_34 = TilesConverter.to_34_array(tiles)
+        return shanten.calculate_shanten(tiles_34=tiles_34)
+
     def action(
       self,
       events: List[Event],
       _observation: Observation
     ) -> Event:
-        return random.choice(events)
+        agari_event = next(filter(lambda x: x.is_agari, events), None)
+        if agari_event is not None:
+            print(agari_event)
+            return agari_event
+        else:
+            event = min(events, key=(lambda x: self._calculate_shanten(_observation=_observation, event=x)))
+            return event
 
 
 class GameClient(object):
