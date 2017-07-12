@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from typing import List, Optional
 
-from .event import Event
-
-from mahjong.meld import Meld
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from game.event import Event
+    from mahjong.meld import Meld
 
 
 class PlayerObservation(object):
@@ -16,7 +17,7 @@ class PlayerObservation(object):
         seat: int,
         scores: int,
         tiles: Optional[List[int]],
-        melds: List[Meld] = [],
+        melds: List['Meld'] = [],
         new_tile: Optional[int] = None
     ):
         self.seat = seat
@@ -34,7 +35,7 @@ class Observation(object):
         dealer_seat: int,
         count_of_riichi_sticks: int,
         count_of_honba_sticks: int,
-        events: List[Event],
+        events: List['Event'],
     ):
         self.player = player
         self.players = players

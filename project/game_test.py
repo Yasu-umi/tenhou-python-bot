@@ -8,7 +8,7 @@ if __name__ == '__main__':
     start = datetime.datetime.now().timestamp()
     i = 1
 
-    while not agari_occred:
+    while True:
         t = GameTable()
         res = t.next_action()
         while res:
@@ -24,9 +24,11 @@ if __name__ == '__main__':
             dif = datetime.datetime.now().timestamp() - start
             print("{} end round {}sec".format(i, dif))
 
-    dif = datetime.datetime.now().timestamp() - start
-    print("{} end round {}sec".format(i, dif))
-    for event in t.selected_events:
-        print(event)
-    for client in t.clients:
-        print("id: {}, scores: {}".format(client.id, client.scores))
+        if agari_occred:
+            dif = datetime.datetime.now().timestamp() - start
+            print("{} end round {}sec".format(i, dif))
+            for event in t.selected_events:
+                print(event)
+            for client in t.clients:
+                print("id: {}, scores: {}".format(client.id, client.scores))
+            agari_occred = False
