@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, Union, List, Tuple
 
 
 class EventBase(object):
     player_id = 0
     type = ''
     discard_tile:  Optional[int] = None
-    meld_tiles: Optional[Tuple[int, int]] = None
+    meld_tiles: Union[None, Tuple[int, int, int], Tuple[int, int, int, int]] = None
 
     @property
     def is_agari(self) -> bool:
-        return isinstance(self, TsumoEvent) or isinstance(self, RonEvent) or isinstance(self, ChanKanEvent)
+        return isinstance(self, TsumoAgariEvent) or isinstance(self, RonAgariEvent) or isinstance(self, ChanKanAgariEvent)
 
     def __str__(self) -> str:
         return "player_id: {}, type: {}, discard_tile: {}, meld_tiles: {}".format(
@@ -18,12 +18,22 @@ class EventBase(object):
         )
 
 
-class DiscardEvent(EventBase):
+class TsumoEvent(EventBase):
     discard_tile: int = -1
 
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
-        self.type = 'discard'
+        self.type = 'tsumo'
+        self.discard_tile = discard_tile
+        self.meld_tiles = None
+
+
+class RinshanTsumoEvent(EventBase):
+    discard_tile: int = -1
+
+    def __init__(self, player_id: int, discard_tile: int) -> None:
+        self.player_id = player_id
+        self.type = 'rinshan_tsumo'
         self.discard_tile = discard_tile
         self.meld_tiles = None
 
@@ -41,73 +51,73 @@ class RiichiEvent(EventBase):
 class PonEvent(EventBase):
     discard_tile: int
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'pon'
         self.discard_tile = discard_tile
-        self.meld_tiles = (meld_tile1, meld_tile2)
+        self.meld_tiles = meld_tiles
 
 
 class ChiEvent(EventBase):
     discard_tile: int
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'chi'
         self.discard_tile = discard_tile
-        self.meld_tiles = (meld_tile1, meld_tile2)
+        self.meld_tiles = meld_tiles
 
 
-class AnKanEvent(EventBase):
+class AnKanDeclarationEvent(EventBase):
     discard_tile: int
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
-        self.type = 'an_kan'
+        self.type = 'an_kan_declaration'
         self.discard_tile = discard_tile
-        self.meld_tiles = (meld_tile1, meld_tile2)
+        self.meld_tiles = meld_tiles
 
 
-class MinKanEvent(EventBase):
+class MinKanDeclarationEvent(EventBase):
     discard_tile: int
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
-        self.type = 'min_kan'
+        self.type = 'min_kan_declaration'
         self.discard_tile = discard_tile
-        self.meld_tiles = (meld_tile1, meld_tile2)
+        self.meld_tiles = meld_tiles
 
 
-class KaKanEvent(EventBase):
+class KaKanDeclarationEvent(EventBase):
     discard_tile: int
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tile1: int, meld_tile2: int) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
-        self.type = 'ka_kan'
+        self.type = 'ka_kan_declaration'
         self.discard_tile = discard_tile
-        self.meld_tiles = (meld_tile1, meld_tile2)
+        self.meld_tiles = meld_tiles
 
 
-class TsumoEvent(EventBase):
+class TsumoAgariEvent(EventBase):
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id
-        self.type = 'tsumo'
+        self.type = 'tsumo_agari'
         self.discard_tile = None
         self.meld_tiles = None
 
 
-class RonEvent(EventBase):
+class RonAgariEvent(EventBase):
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id
-        self.type = 'ron'
+        self.type = 'ron_agari'
         self.discard_tile = None
         self.meld_tiles = None
 
 
-class ChanKanEvent(EventBase):
+class ChanKanAgariEvent(EventBase):
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
-        self.type = 'chan_kan'
+        self.type = 'chan_kan_agari'
         self.discard_tile = None
         self.meld_tiles = None
 
@@ -128,24 +138,28 @@ class NoneEvent(EventBase):
         self.meld_tiles = None
 
 
+KanDeclarationEvent = Union[
+    AnKanDeclarationEvent,
+    MinKanDeclarationEvent,
+    KaKanDeclarationEvent,
+]
+
 MeldEvent = Union[
     PonEvent,
     ChiEvent,
-    AnKanEvent,
-    MinKanEvent,
-    KaKanEvent,
 ]
 
 HasDiscardTileEvent = Union[
     MeldEvent,
-    DiscardEvent,
+    TsumoEvent,
+    RinshanTsumoEvent,
     RiichiEvent,
 ]
 
 AgariEvent = Union[
-    TsumoEvent,
-    RonEvent,
-    ChanKanEvent,
+    TsumoAgariEvent,
+    RonAgariEvent,
+    ChanKanAgariEvent,
 ]
 
 Event = Union[

@@ -5,7 +5,7 @@ from typing import List
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
 from game.client import ClientInterface, BaseClient, GameClient
-from game.event import TsumoEvent, RonEvent, RiichiEvent, ChanKanEvent, Event
+from game.event import TsumoAgariEvent, RonAgariEvent, RiichiEvent, ChanKanAgariEvent, Event
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
@@ -183,12 +183,12 @@ class GameTable(object):
             res = hand.estimate_hand_value(
                 tiles=client.tiles + [last_event.discard_tile],
                 win_tile=last_event.discard_tile,
-                is_tsumo=isinstance(win_event, TsumoEvent),
+                is_tsumo=isinstance(win_event, TsumoAgariEvent),
                 is_riichi=client.in_riichi,
                 is_dealer=client.seat == self.dealer_seat,
                 is_ippatsu=last_event.player_id == client.id and isinstance(last_event, RiichiEvent),
                 is_rinshan=False,
-                is_chankan=isinstance(win_event, ChanKanEvent),
+                is_chankan=isinstance(win_event, ChanKanAgariEvent),
                 is_haitei=False,
                 is_houtei=False,
                 is_daburu_riichi=False,
@@ -204,10 +204,10 @@ class GameTable(object):
             )
 
             if res['cost'] is not None:
-                if isinstance(win_event, RonEvent):
+                if isinstance(win_event, RonAgariEvent):
                     scores[win_event.player_id] += res['cost']['main']
                     scores[last_event.player_id] -= res['cost']['main']
-                elif isinstance(win_event, TsumoEvent):
+                elif isinstance(win_event, TsumoAgariEvent):
                     for client in self.clients:
                         if client.id == win_event.player_id:
                             scores[client.id] += (3 * res['cost']['main']) + res['cost']['additional']

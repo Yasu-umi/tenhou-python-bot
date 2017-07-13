@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from game.event import (PonEvent, ChiEvent, AnKanEvent, MinKanEvent, KaKanEvent,
-                        DiscardEvent, RiichiEvent, TsumoEvent, RonEvent, ChanKanEvent, KyushuKyuhaiEvent, NoneEvent)
+from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
+                        TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -18,8 +18,12 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'Event',
     ) -> bool:
-        if isinstance(selected_event, DiscardEvent):
-            return ActionExcutor._execute_discard(
+        if isinstance(selected_event, TsumoEvent):
+            return ActionExcutor._execute_tsumo(
+                table=table, client=client, _observation=_observation, selected_event=selected_event
+            )
+        elif isinstance(selected_event, RinshanTsumoEvent):
+            return ActionExcutor._execute_rinshan_tsumo(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
         elif isinstance(selected_event, RiichiEvent):
@@ -34,28 +38,28 @@ class ActionExcutor:
             return ActionExcutor._execute_chi(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, AnKanEvent):
-            return ActionExcutor._execute_an_kan(
+        elif isinstance(selected_event, AnKanDeclarationEvent):
+            return ActionExcutor._execute_an_kan_declaration(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, MinKanEvent):
-            return ActionExcutor._execute_min_kan(
+        elif isinstance(selected_event, MinKanDeclarationEvent):
+            return ActionExcutor._execute_min_kan_declaration(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, KaKanEvent):
-            return ActionExcutor._execute_ka_kan(
+        elif isinstance(selected_event, KaKanDeclarationEvent):
+            return ActionExcutor._execute_ka_kan_declaration(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, TsumoEvent):
-            return ActionExcutor._execute_tsumo(
+        elif isinstance(selected_event, TsumoAgariEvent):
+            return ActionExcutor._execute_tsumo_agari(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, RonEvent):
-            return ActionExcutor._execute_ron(
+        elif isinstance(selected_event, RonAgariEvent):
+            return ActionExcutor._execute_ron_agari(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
-        elif isinstance(selected_event, ChanKanEvent):
-            return ActionExcutor._execute_chan_kan(
+        elif isinstance(selected_event, ChanKanAgariEvent):
+            return ActionExcutor._execute_chan_kan_agari(
                 table=table, client=client, _observation=_observation, selected_event=selected_event
             )
         elif isinstance(selected_event, KyushuKyuhaiEvent):
@@ -68,11 +72,21 @@ class ActionExcutor:
             raise 'NotFoundEvent'
 
     @staticmethod
-    def _execute_discard(
+    def _execute_tsumo(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'DiscardEvent',
+        selected_event: 'TsumoEvent',
+    ) -> bool:
+        ActionExcutor._discard(client=client, _observation=_observation, selected_event=selected_event)
+        return False
+
+    @staticmethod
+    def _execute_rinshan_tsumo(
+        table: 'GameTable',
+        client: 'GameClient',
+        _observation: 'Observation',
+        selected_event: 'RinshanTsumoEvent',
     ) -> bool:
         ActionExcutor._discard(client=client, _observation=_observation, selected_event=selected_event)
         return False
@@ -111,56 +125,56 @@ class ActionExcutor:
         return False
 
     @staticmethod
-    def _execute_an_kan(
+    def _execute_an_kan_declaration(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'AnKanEvent',
+        selected_event: 'AnKanDeclarationEvent',
     ) -> bool:
         return False
 
     @staticmethod
-    def _execute_min_kan(
+    def _execute_min_kan_declaration(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'MinKanEvent',
+        selected_event: 'MinKanDeclarationEvent',
     ) -> bool:
         return False
 
     @staticmethod
-    def _execute_ka_kan(
+    def _execute_ka_kan_declaration(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'KaKanEvent',
+        selected_event: 'KaKanDeclarationEvent',
     ) -> bool:
         return False
 
     @staticmethod
-    def _execute_tsumo(
+    def _execute_tsumo_agari(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'TsumoEvent',
+        selected_event: 'TsumoAgariEvent',
     ) -> bool:
         return True
 
     @staticmethod
-    def _execute_ron(
+    def _execute_ron_agari(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'RonEvent',
+        selected_event: 'RonAgariEvent',
     ) -> bool:
         return True
 
     @staticmethod
-    def _execute_chan_kan(
+    def _execute_chan_kan_agari(
         table: 'GameTable',
         client: 'GameClient',
         _observation: 'Observation',
-        selected_event: 'ChanKanEvent',
+        selected_event: 'ChanKanAgariEvent',
     ) -> bool:
         return False
 
