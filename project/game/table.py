@@ -5,6 +5,7 @@ from typing import List
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
 from game.client import ClientInterface, BaseClient, GameClient
+from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException
 from game.event import TsumoAgariEvent, RonAgariEvent, RiichiEvent, ChanKanAgariEvent, Event
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
@@ -176,9 +177,9 @@ class GameTable(object):
                 next
             last_event = next((event for event in reversed(self.selected_events) if not event.is_agari), None)
             if last_event is None:
-                raise 'NotFoundLastEvent'
+                raise NotFoundLastEventException
             if last_event.discard_tile is None:
-                raise 'NotFoundLastEventDiscardTile'
+                raise NotFoundLastEventDiscardTileException
 
             res = hand.estimate_hand_value(
                 tiles=client.tiles + [last_event.discard_tile],

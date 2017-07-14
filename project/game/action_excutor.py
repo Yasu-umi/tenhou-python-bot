@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
+from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -206,7 +207,7 @@ class ActionExcutor:
             if _observation.player.new_tile is not None:
                 tiles.append(_observation.player.new_tile)
             else:
-                raise 'NotFoundNewTile'
+                raise NotFoundNewTileException
             client.tiles = tiles
         else:
-            raise 'NotFoundDiscardTile'
+            raise NotFoundDiscardTileException

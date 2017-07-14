@@ -3,6 +3,7 @@ from typing import List, Tuple, Optional
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
+from game.exceptions import ThisRoundAlreadyEndsException
 from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
@@ -53,7 +54,7 @@ class ArgumentsCreator:
                 events.append(TsumoAgariEvent(player_id=action_client.id))
 
         elif isinstance(last_event, RonAgariEvent) or isinstance(last_event, TsumoAgariEvent):
-            raise 'ThisRoundAlreadyEnds'
+            raise ThisRoundAlreadyEndsException
         elif isinstance(last_event, TsumoEvent):
             next_player_id = 0 if 2 < last_event.player_id else last_event.player_id + 1
             action_client = table.clients[next_player_id]
