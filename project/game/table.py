@@ -6,7 +6,9 @@ from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
 from game.client import ClientInterface, BaseClient, GameClient
 from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException
-from game.event import TsumoAgariEvent, RonAgariEvent, RiichiEvent, ChanKanAgariEvent, Event
+from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
+                        TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
+                        Event)
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
@@ -24,7 +26,7 @@ class GameTable(object):
     wanpai: List[int] = []
     yama: List[int] = []
 
-    dora_indexes: List[int] = []
+    n_open_dora: int = 0
 
     ended_round = False
     ended_game = False
@@ -34,11 +36,21 @@ class GameTable(object):
         return [self.client0, self.client1, self.client2, self.client3]
 
     @property
-    def dora_indicators(self) -> List[int]:
+    def open_dora_indicators(self) -> List[int]:
+        """
+        王牌の中でオープンになっているドラ、(使用時のみ)赤ドラ
+        """
         if self.is_aka:
-            return [self.wanpai[idx] for idx in self.dora_indexes] + AKA_DORA_LIST
+            return list(set([self.wanpai[idx] for idx in range(0, self.n_open_dora)] + AKA_DORA_LIST))
         else:
-            return [self.wanpai[idx] for idx in self.dora_indexes]
+            return [self.wanpai[idx] for idx in range(0, self.n_open_dora)]
+
+    @property
+    def all_dora_indicators(self) -> List[int]:
+        """
+        王牌の中でオープンになっているドラ、裏ドラ、(使用時のみ)赤ドラ
+        """
+        return list(set(self.open_dora_indicators + [self.wanpai[idx * 2] for idx in range(0, self.n_open_dora)]))
 
     @property
     def round_wind(self) -> int:
@@ -126,7 +138,7 @@ class GameTable(object):
 
         self.selected_events = []
 
-        self.dora_indexes = [0]
+        self.n_open_dora = 1
 
         self._init_riichi()
         self._set_seats(seats)
@@ -198,7 +210,7 @@ class GameTable(object):
                 is_renhou=False,
                 is_chiihou=False,
                 open_sets=None,
-                dora_indicators=self.dora_indicators,
+                dora_indicators=self.all_dora_indicators,
                 called_kan_indices=None,
                 player_wind=GameClient.player_wind(self.dealer_seat),
                 round_wind=self.round_wind,

@@ -5,7 +5,7 @@ from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclara
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
 from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException, NotFromWhoException
 
-from mahjong.meld import Meld, PON_TYPE, CHI_TYPE
+from mahjong.meld import Meld, PON_TYPE, CHI_TYPE, KAN_TYPE
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -164,7 +164,9 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'AnKanDeclarationEvent',
     ) -> bool:
-        return False
+        return ActionExcutor._execute_kan(
+            table=table, client=client, _observation=_observation, selected_event=selected_event, type=Meld.KAN,
+        )
 
     @staticmethod
     def _execute_min_kan_declaration(
@@ -173,6 +175,32 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'MinKanDeclarationEvent',
     ) -> bool:
+        return ActionExcutor._execute_kan(
+            table=table, client=client, _observation=_observation, selected_event=selected_event, type=Meld.KAN,
+        )
+
+    @staticmethod
+    def _execute_kan(
+        table: 'GameTable',
+        client: 'GameClient',
+        _observation: 'Observation',
+        selected_event: Union['AnKanDeclarationEvent','MinKanDeclarationEvent'],
+        type: 'KAN_TYPE',
+    ) -> bool:
+        from_event = next(filter(lambda x: x.discard_tile == selected_event.meld_tiles[0] ,_observation.events), None)
+        from_seat = table.clients[from_event.player_id].seat if from_event is not None else None
+        # AnKanDeclarationの場合from_whoはNoneになる
+        from_who = next(filter(lambda x: x.seat == from_seat, Observation.players)) if from_seat is not None else None
+        meld = Meld(
+            who=Observation.player,
+            tiles=list(selected_event.meld_tiles),
+            type=type,
+            from_who=from_who,
+            called_tile=selected_event.meld_tiles[0],
+            opened=isinstance(selected_event.type, AnKanDeclarationEvent)
+        )
+        client.tiles = [tile for tile in client.tiles if tile not in selected_event.meld_tiles]
+        client.melds.append(meld)
         return False
 
     @staticmethod
