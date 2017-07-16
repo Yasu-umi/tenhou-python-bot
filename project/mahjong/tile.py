@@ -14,7 +14,7 @@ class Tile(object):
 class TilesConverter(object):
 
     @staticmethod
-    def to_one_line_string(tiles):
+    def to_one_line_string(tiles: List[int]) -> str:
         """
         Convert 136 tiles array to the one line string
         Example of output 123s123p123m33z
@@ -40,7 +40,7 @@ class TilesConverter(object):
         return man + pin + sou + honors
 
     @staticmethod
-    def to_34_array(tiles):
+    def to_34_array(tiles: List[int]) -> List[int]:
         """
         Convert 136 array to the 34 tiles array
         """
@@ -51,12 +51,12 @@ class TilesConverter(object):
         return results
 
     @staticmethod
-    def to_136_array(tiles):
+    def to_136_array(tiles: List[int]) -> List[int]:
         """
         Convert 34 array to the 136 tiles array
         """
-        temp = []
-        results = []
+        temp: List[int] = []
+        results: List[int] = []
         for x in range(0, 34):
             if tiles[x]:
                 temp_value = [x * 4] * tiles[x]
@@ -73,14 +73,19 @@ class TilesConverter(object):
         return results
 
     @staticmethod
-    def string_to_136_array(sou=None, pin=None, man=None, honors=None):
+    def string_to_136_array(
+        sou: Optional[str] = None,
+        pin: Optional[str] = None,
+        man: Optional[str] = None,
+        honors: Optional[str] = None,
+    ) -> List[int]:
         """
         Method to convert one line string tiles format to the 136 array
         We need it to increase readability of our tests
         """
-        def _split_string(string, offset):
-            data = []
-            temp = []
+        def _split_string(string:  Optional[str], offset: int) -> List[int]:
+            data: List[int] = []
+            temp: List[int] = []
 
             if not string:
                 return []
@@ -107,7 +112,12 @@ class TilesConverter(object):
         return results
 
     @staticmethod
-    def string_to_34_array(sou=None, pin=None, man=None, honors=None):
+    def string_to_34_array(
+        sou: Optional[str] = None,
+        pin: Optional[str] = None,
+        man: Optional[str] = None,
+        honors: Optional[str] = None,
+    ) -> List[int]:
         """
         Method to convert one line string tiles format to the 34 array
         We need it to increase readability of our tests

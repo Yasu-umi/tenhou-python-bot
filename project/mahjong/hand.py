@@ -5,6 +5,8 @@ import itertools
 import copy
 from functools import reduce
 
+from typing import List, Optional
+
 from mahjong.ai.agari import Agari
 from mahjong import yaku
 from mahjong.tile import TilesConverter
@@ -16,26 +18,26 @@ from utils.settings_handler import settings
 class FinishedHand(object):
 
     def estimate_hand_value(self,
-                            tiles,
-                            win_tile,
-                            is_tsumo=False,
-                            is_riichi=False,
-                            is_dealer=False,
-                            is_ippatsu=False,
-                            is_rinshan=False,
-                            is_chankan=False,
-                            is_haitei=False,
-                            is_houtei=False,
-                            is_daburu_riichi=False,
-                            is_nagashi_mangan=False,
-                            is_tenhou=False,
-                            is_renhou=False,
-                            is_chiihou=False,
-                            open_sets=None,
-                            dora_indicators=None,
-                            called_kan_indices=None,
-                            player_wind=None,
-                            round_wind=None):
+                            tiles: List[int],
+                            win_tile: int,
+                            is_tsumo: bool = False,
+                            is_riichi: bool = False,
+                            is_dealer: bool = False,
+                            is_ippatsu: bool = False,
+                            is_rinshan: bool = False,
+                            is_chankan: bool = False,
+                            is_haitei: bool = False,
+                            is_houtei: bool = False,
+                            is_daburu_riichi: bool = False,
+                            is_nagashi_mangan: bool = False,
+                            is_tenhou: bool = False,
+                            is_renhou: bool = False,
+                            is_chiihou: bool = False,
+                            open_sets: Optional[List[int]] = None,
+                            dora_indicators: Optional[List[int]] = None,
+                            called_kan_indices: Optional[List[int]] = None,
+                            player_wind: Optional[int] = None,
+                            round_wind: Optional[int] = None):
         """
         :param tiles: array with 14 tiles in 136-tile format
         :param win_tile: tile that caused win (ron or tsumo)

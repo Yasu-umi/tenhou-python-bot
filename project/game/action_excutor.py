@@ -5,7 +5,7 @@ from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclara
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
 from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException, NotFromWhoException
 
-from mahjong.meld import Meld
+from mahjong.meld import Meld, PON_TYPE, CHI_TYPE
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -139,7 +139,7 @@ class ActionExcutor:
         client: 'GameClient',
         _observation: 'Observation',
         selected_event: Union['ChiEvent','PonEvent'],
-        type: Union[Meld.PON, Meld.CHI],
+        type: Union['PON_TYPE', 'CHI_TYPE'],
     ) -> bool:
         from_event = next(filter(lambda x: x.discard_tile == selected_event.meld_tiles[0] ,_observation.events), None)
         from_seat = table.clients[from_event.player_id].seat if from_event is not None else None

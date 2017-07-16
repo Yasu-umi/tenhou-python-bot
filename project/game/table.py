@@ -41,7 +41,7 @@ class GameTable(object):
             return [self.wanpai[idx] for idx in self.dora_indexes]
 
     @property
-    def round_wind(self) -> None:
+    def round_wind(self) -> int:
         if self.round_number < 4:
             return EAST
         elif 4 <= self.round_number < 8:
