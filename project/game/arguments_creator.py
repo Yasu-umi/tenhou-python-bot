@@ -34,6 +34,7 @@ class ArgumentsCreator:
             dealer_seat=table.dealer_seat,
             count_of_riichi_sticks=table.count_of_riichi_sticks,
             count_of_honba_sticks=table.count_of_honba_sticks,
+            dora_indicators=table.dora_indicators,
             events=table.selected_events
         )
         return _observation, events, action_client

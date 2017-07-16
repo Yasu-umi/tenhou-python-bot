@@ -174,6 +174,7 @@ AgariEvent = Union[
 ]
 
 Event = Union[
+    KanDeclarationEvent,
     HasDiscardTileEvent,
     AgariEvent,
     KyushuKyuhaiEvent,

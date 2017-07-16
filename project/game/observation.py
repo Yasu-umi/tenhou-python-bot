@@ -90,6 +90,7 @@ class Observation(object):
         dealer_seat: int,
         count_of_riichi_sticks: int,
         count_of_honba_sticks: int,
+        dora_indicators: List[int],
         events: List['Event'],
     ) -> None:
         self.player = player
@@ -97,5 +98,6 @@ class Observation(object):
         self.dealer_seat = dealer_seat
         self.count_of_riichi_sticks = count_of_riichi_sticks
         self.count_of_honba_sticks = count_of_honba_sticks
+        self.dora_indicators = dora_indicators
 
         self.events = events
