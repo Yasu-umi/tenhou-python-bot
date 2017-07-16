@@ -19,3 +19,7 @@ class NotFoundNewTileException(Exception):
 
 class NotFoundDiscardTileException(Exception):
     pass
+
+
+class NotFromWhoException(Exception):
+    pass

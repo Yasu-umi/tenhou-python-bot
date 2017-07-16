@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, Union
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
-from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException
+from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException, NotFromWhoException
 
 from mahjong.meld import Meld
 
@@ -118,17 +118,9 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'PonEvent',
     ) -> bool:
-        meld = Meld(
-            who=None,
-            tiles=list(selected_event.meld_tiles),
-            type=Meld.PON,
-            from_who=None,
-            called_tile=selected_event.meld_tiles[0],
-            opened=selected_event.opened,
+        return ActionExcutor._execute_pon_or_chi(
+            table=table, client=client, _observation=_observation, selected_event=selected_event, type=Meld.PON,
         )
-        client.tiles = [tile for tile in client.tiles if tile in selected_event.meld_tiles]
-        client.melds.append(meld)
-        return False
 
     @staticmethod
     def _execute_chi(
@@ -137,6 +129,33 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'ChiEvent',
     ) -> bool:
+        return ActionExcutor._execute_pon_or_chi(
+            table=table, client=client, _observation=_observation, selected_event=selected_event, type=Meld.CHI,
+        )
+
+    @staticmethod
+    def _execute_pon_or_chi(
+        table: 'GameTable',
+        client: 'GameClient',
+        _observation: 'Observation',
+        selected_event: Union['ChiEvent','PonEvent'],
+        type: Union[Meld.PON, Meld.CHI],
+    ) -> bool:
+        from_event = next(filter(lambda x: x.discard_tile == selected_event.meld_tiles[0] ,_observation.events), None)
+        from_seat = table.clients[from_event.player_id].seat if from_event is not None else None
+        from_who = next(filter(lambda x: x.seat == from_seat, Observation.players)) if from_seat is not None else None
+        if from_who is None:
+            raise NotFromWhoException
+        meld = Meld(
+            who=Observation.player,
+            tiles=list(selected_event.meld_tiles),
+            type=type,
+            from_who=from_who,
+            called_tile=selected_event.meld_tiles[0],
+            opened=selected_event.opened,
+        )
+        client.tiles = [tile for tile in client.tiles if tile not in selected_event.meld_tiles]
+        client.melds.append(meld)
         return False
 
     @staticmethod
