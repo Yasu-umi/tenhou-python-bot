@@ -55,6 +55,7 @@ class RiichiEvent(EventBase):
 
 class PonEvent(EventBase):
     discard_tile: int
+    meld_tiles: Tuple[int, int, int]
     opened: bool
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int], opened: bool) -> None:
@@ -67,6 +68,7 @@ class PonEvent(EventBase):
 
 class ChiEvent(EventBase):
     discard_tile: int
+    meld_tiles: Tuple[int, int, int]
     opened: bool
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int], opened: bool) -> None:
@@ -79,6 +81,7 @@ class ChiEvent(EventBase):
 
 class AnKanDeclarationEvent(EventBase):
     discard_tile: int
+    meld_tiles: Tuple[int, int, int, int]
     opened: bool = False
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
@@ -90,6 +93,7 @@ class AnKanDeclarationEvent(EventBase):
 
 class MinKanDeclarationEvent(EventBase):
     discard_tile: int
+    meld_tiles: Tuple[int, int, int, int]
     opened: bool = True
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
@@ -101,6 +105,7 @@ class MinKanDeclarationEvent(EventBase):
 
 class KaKanDeclarationEvent(EventBase):
     discard_tile: int
+    meld_tiles: Tuple[int, int, int, int]
     opened: bool = True
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:

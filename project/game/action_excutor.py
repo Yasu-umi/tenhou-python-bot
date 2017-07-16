@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+from typing import Optional
+
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
 from game.exceptions import NotFoundNewTileException, NotFoundDiscardTileException
+
+from mahjong.meld import Meld
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -114,6 +118,16 @@ class ActionExcutor:
         _observation: 'Observation',
         selected_event: 'PonEvent',
     ) -> bool:
+        meld = Meld(
+            who=None,
+            tiles=list(selected_event.meld_tiles),
+            type=Meld.PON,
+            from_who=None,
+            called_tile=selected_event.meld_tiles[0],
+            opened=selected_event.opened,
+        )
+        client.tiles = [tile for tile in client.tiles if tile in selected_event.meld_tiles]
+        client.melds.append(meld)
         return False
 
     @staticmethod
