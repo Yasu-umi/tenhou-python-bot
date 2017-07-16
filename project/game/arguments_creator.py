@@ -123,7 +123,8 @@ class ArgumentsCreator:
     def _add_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_parts: List[Tuple[int, int]]) -> List['Event']:
         pon_events: List['Event'] = []
         for tile in action_client.tiles:
-            if (tile / 4) != (new_tile / 4):
+            # 喰い替え防止の条件
+            if (tile // 4) != (new_tile // 4):
                 discard_tile = tile
                 pon_events.extend([
                     PonEvent(
@@ -143,7 +144,7 @@ class ArgumentsCreator:
     def _get_ponnable_client_tiles(clients: List['GameClient'], discard_tile: int) -> Optional[Tuple['GameClient', List[Tuple[int, int]]]]:
         tpl: Tuple[Optional['GameClient'], List[Tuple[int, int]]] = (None, [])
         for client in clients:
-            tiles = [tile for tile in client.tiles if (tile / 4) == (discard_tile / 4)]
+            tiles = [tile for tile in client.tiles if (tile // 4) == (discard_tile // 4)]
             if len(tiles) == 2:
                 return client, [(tiles[0], tiles[1])]
             if len(tiles) == 3:
