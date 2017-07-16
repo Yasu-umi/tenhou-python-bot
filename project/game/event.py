@@ -8,7 +8,6 @@ class EventBase(object):
     discard_tile:  Optional[int] = None
     # first tile is called tile
     meld_tiles: Union[None, Tuple[int, int, int], Tuple[int, int, int, int]] = None
-    opened: Optional[bool] = None
 
     @property
     def is_agari(self) -> bool:
@@ -23,7 +22,6 @@ class EventBase(object):
 class TsumoEvent(EventBase):
     discard_tile: int
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
@@ -34,7 +32,6 @@ class TsumoEvent(EventBase):
 class RinshanTsumoEvent(EventBase):
     discard_tile: int
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
@@ -45,7 +42,6 @@ class RinshanTsumoEvent(EventBase):
 class RiichiEvent(EventBase):
     discard_tile: int
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
@@ -56,33 +52,28 @@ class RiichiEvent(EventBase):
 class PonEvent(EventBase):
     discard_tile: int
     meld_tiles: Tuple[int, int, int]
-    opened: bool
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int], opened: bool) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'pon'
         self.discard_tile = discard_tile
         self.meld_tiles = meld_tiles
-        self.opened = opened
 
 
 class ChiEvent(EventBase):
     discard_tile: int
     meld_tiles: Tuple[int, int, int]
-    opened: bool
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int], opened: bool) -> None:
+    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'chi'
         self.discard_tile = discard_tile
         self.meld_tiles = meld_tiles
-        self.opened = opened
 
 
 class AnKanDeclarationEvent(EventBase):
     discard_tile: int
     meld_tiles: Tuple[int, int, int, int]
-    opened: bool = False
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
@@ -94,7 +85,6 @@ class AnKanDeclarationEvent(EventBase):
 class MinKanDeclarationEvent(EventBase):
     discard_tile: int
     meld_tiles: Tuple[int, int, int, int]
-    opened: bool = True
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
@@ -106,7 +96,6 @@ class MinKanDeclarationEvent(EventBase):
 class KaKanDeclarationEvent(EventBase):
     discard_tile: int
     meld_tiles: Tuple[int, int, int, int]
-    opened: bool = True
 
     def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
@@ -118,7 +107,6 @@ class KaKanDeclarationEvent(EventBase):
 class TsumoAgariEvent(EventBase):
     discard_tile: None = None
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id
@@ -128,7 +116,6 @@ class TsumoAgariEvent(EventBase):
 class RonAgariEvent(EventBase):
     discard_tile: None = None
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id
@@ -138,7 +125,6 @@ class RonAgariEvent(EventBase):
 class ChanKanAgariEvent(EventBase):
     discard_tile: None = None
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int, discard_tile: int) -> None:
         self.player_id = player_id
@@ -148,7 +134,6 @@ class ChanKanAgariEvent(EventBase):
 class KyushuKyuhaiEvent(EventBase):
     discard_tile: None = None
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id
@@ -158,7 +143,6 @@ class KyushuKyuhaiEvent(EventBase):
 class NoneEvent(EventBase):
     discard_tile: None = None
     meld_tiles: None = None
-    opened: None = None
 
     def __init__(self, player_id: int) -> None:
         self.player_id = player_id

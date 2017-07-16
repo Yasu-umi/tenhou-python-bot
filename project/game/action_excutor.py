@@ -152,7 +152,6 @@ class ActionExcutor:
             type=type,
             from_who=from_who,
             called_tile=selected_event.meld_tiles[0],
-            opened=selected_event.opened,
         )
         client.tiles = [tile for tile in client.tiles if tile not in selected_event.meld_tiles]
         client.melds.append(meld)

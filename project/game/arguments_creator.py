@@ -79,7 +79,7 @@ class ArgumentsCreator:
                 action_client = ponnable_client_tiles[0]
                 meld_parts = ponnable_client_tiles[1]
                 events = ArgumentsCreator._add_pon_events(
-                    events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts, opened=True
+                    events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
                 )
                 events = ArgumentsCreator._add_none_events(
                     events=events, action_client=action_client
@@ -109,16 +109,7 @@ class ArgumentsCreator:
             TsumoEvent(player_id=action_client.id, discard_tile=discard_tile)
             for discard_tile in action_client.tiles + [new_tile]
         ]
-
-        pon_events: List['Event'] = []
-        ponnable_client_tiles = ArgumentsCreator._get_ponnable_client_tiles(
-            clients=[action_client], discard_tile=new_tile
-        )
-        if ponnable_client_tiles is not None:
-            pon_events.extend(ArgumentsCreator._add_pon_events(
-                events=[], action_client=action_client, new_tile=new_tile, meld_parts=ponnable_client_tiles[1], opened=False
-            ))
-        return events + tsumo_events + pon_events
+        return events + tsumo_events
 
     @staticmethod
     def _add_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
@@ -129,20 +120,19 @@ class ArgumentsCreator:
         return events + agari_events
 
     @staticmethod
-    def _add_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_parts: List[Tuple[int, int]], opened: bool) -> List['Event']:
+    def _add_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_parts: List[Tuple[int, int]]) -> List['Event']:
         pon_events: List['Event'] = []
         for tile in action_client.tiles:
             if (tile / 4) != (new_tile / 4):
                 discard_tile = tile
-                pon_events = pon_events + [
+                pon_events.extend([
                     PonEvent(
                         player_id=action_client.id,
                         discard_tile=discard_tile,
                         meld_tiles=(discard_tile, meld_part[0], meld_part[1]),
-                        opened=opened,
                     )
                     for meld_part in meld_parts
-                ]
+                ])
         return events + pon_events
 
     @staticmethod
