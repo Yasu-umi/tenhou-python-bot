@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import List
 
 
 class Tile(object):
@@ -116,7 +117,7 @@ class TilesConverter(object):
         return results
 
     @staticmethod
-    def find_34_tile_in_136_array(tile34, tiles):
+    def find_34_tile_in_136_array(tile34: int, tiles: List[int]) -> Optional[int]:
         """
         Our shanten calculator will operate with 34 tiles format,
         after calculations we need to find calculated 34 tile
