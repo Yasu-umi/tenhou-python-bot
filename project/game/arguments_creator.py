@@ -63,6 +63,7 @@ class ArgumentsCreator:
             events = ArgumentsCreator._add_tsumo_agari_events(
                 events=events, action_client=action_client, new_tile=new_tile
             )
+            # TODO: KyushuKyuhaiEventを加える
             return events, action_client, new_tile
 
         if isinstance(last_event, AnKanDeclarationEvent) or isinstance(last_event, MinKanDeclarationEvent):
@@ -81,7 +82,10 @@ class ArgumentsCreator:
             )
             return events, action_client, new_tile
 
-        if isinstance(last_event, TsumoEvent) or isinstance(last_event, PonEvent) or isinstance(last_event, ChiEvent) or isinstance(last_event, RinshanTsumoEvent):
+        if isinstance(last_event, TsumoEvent) \
+            or isinstance(last_event, PonEvent) \
+            or isinstance(last_event, ChiEvent) \
+            or isinstance(last_event, RinshanTsumoEvent):
             new_tile = last_event.discard_tile
 
             last_event_player_seat = table.clients[last_event.player_id].seat
@@ -93,69 +97,10 @@ class ArgumentsCreator:
                 if next_player is None:
                     raise NotFoundNextSeatPlayerException
                 next_players.append(next_player)
-            for next_player in next_players:
-                action_client = next_player
 
-                events = ArgumentsCreator._add_ron_agari_events(
-                    events=events, action_client=action_client, new_tile=new_tile
-                )
-
-                kannable_tiles = ArgumentsCreator._get_kannable_tiles(
-                    action_client=action_client, discard_tile=new_tile
-                )
-                if kannable_tiles is not None:
-                    meld_part = kannable_tiles
-                    events = ArgumentsCreator._add_min_kan_events(
-                        events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
-                    )
-
-                ponnable_tiles = ArgumentsCreator._get_ponnable_tiles(
-                    action_client=action_client, discard_tile=new_tile
-                )
-                if ponnable_tiles is not None:
-                    meld_parts = ponnable_tiles
-                    events = ArgumentsCreator._add_pon_events(
-                        events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
-                    )
-
-                # ポン・カン・アガリのいずれも不可能であった場合、次のプレイヤーを見る
-                if len(events) > 0:
-                    events = ArgumentsCreator._add_none_events(
-                        events=events, action_client=action_client
-                    )
-                    return events, action_client, new_tile
-                else:
-                    next
-
-            # 全てのプレイヤーがポン・カン・アガリのいずれも不可能であった場合、チーが可能か見る
-            chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
-            action_client = next(filter(lambda x: x is not None and x.seat == chiable_seat, table.clients), None)
-            if action_client is None:
-                raise NotFoundNextSeatPlayerException
-            chiable_tiles = ArgumentsCreator._get_chiable_tiles(
-                action_client=action_client, discard_tile=new_tile
+            return ArgumentsCreator._after_has_discard_event(
+                table=table, last_event_player_seat=last_event_player_seat, next_players=next_players, new_tile=new_tile
             )
-            if chiable_tiles is not None:
-                meld_parts = chiable_tiles
-                events = ArgumentsCreator._add_chi_events(
-                    events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
-                )
-                events = ArgumentsCreator._add_none_events(
-                    events=events, action_client=action_client
-                )
-                return events, action_client, new_tile
-
-            # 全てのプレイヤーがポン・カン・アガリ・チーのいずれも不可能であった場合、次のツモに移行
-            next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
-            action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
-            if action_client is None:
-                raise NotFoundNextSeatPlayerException
-            new_tile = table.yama.pop()
-
-            events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
-                events=events, action_client=action_client, new_tile=new_tile
-            )
-            return events, action_client, new_tile
 
         last_event_player_seat = table.clients[last_event.player_id].seat
         next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
@@ -168,6 +113,90 @@ class ArgumentsCreator:
             events=events, action_client=action_client, new_tile=new_tile
         )
         return events, action_client, new_tile
+
+    @staticmethod
+    def _after_has_discard_event(
+        table: 'GameTable',
+        last_event_player_seat: int,
+        next_players: List['GameClient'],
+        new_tile: int,
+    ) -> Tuple[List['Event'], 'GameClient', Optional[int]]:
+        events: List['Event'] = []
+        for next_player in next_players:
+            action_client = next_player
+
+            events = ArgumentsCreator._add_ron_agari_events(
+                events=events, action_client=action_client, new_tile=new_tile
+            )
+
+            kannable_tiles = ArgumentsCreator._get_kannable_tiles(
+                action_client=action_client, discard_tile=new_tile
+            )
+            if kannable_tiles is not None:
+                meld_part = kannable_tiles
+                events = ArgumentsCreator._add_min_kan_events(
+                    events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
+                )
+
+            ponnable_tiles = ArgumentsCreator._get_ponnable_tiles(
+                action_client=action_client, discard_tile=new_tile
+            )
+            if ponnable_tiles is not None:
+                meld_parts = ponnable_tiles
+                events = ArgumentsCreator._add_pon_events(
+                    events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
+                )
+
+            # ポン・カン・アガリのいずれも不可能であった場合、次のプレイヤーを見る
+            if len(events) > 0:
+                # カン・ポン可能なプレイヤーがチーも可能な場合、チーイベントも一緒に渡す
+                chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+                if action_client.seat == chiable_seat:
+                    chiable_tiles = ArgumentsCreator._get_chiable_tiles(
+                        action_client=_action_client, discard_tile=new_tile
+                    )
+                    if chiable_tiles is not None:
+                        meld_parts = chiable_tiles
+                        events = ArgumentsCreator._add_chi_events(
+                            events=events, action_client=_action_client, new_tile=new_tile, meld_parts=meld_parts
+                        )
+                events = ArgumentsCreator._add_none_events(
+                    events=events, action_client=action_client
+                )
+                return events, action_client, new_tile
+            else:
+                continue
+
+        # 全てのプレイヤーがポン・カン・アガリのいずれも不可能であった場合、チーが可能か見る
+        chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        _action_client = next(filter(lambda x: x is not None and x.seat == chiable_seat, table.clients), None)
+        if _action_client is None:
+            raise NotFoundNextSeatPlayerException
+        if _action_client in next_players:
+            chiable_tiles = ArgumentsCreator._get_chiable_tiles(
+                action_client=_action_client, discard_tile=new_tile
+            )
+            if chiable_tiles is not None:
+                meld_parts = chiable_tiles
+                events = ArgumentsCreator._add_chi_events(
+                    events=events, action_client=_action_client, new_tile=new_tile, meld_parts=meld_parts
+                )
+                events = ArgumentsCreator._add_none_events(
+                    events=events, action_client=_action_client
+                )
+                return events, _action_client, new_tile
+
+        # 全てのプレイヤーがポン・カン・アガリ・チーのいずれも不可能であった場合、次のツモに移行
+        next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        _action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
+        if _action_client is None:
+            raise NotFoundNextSeatPlayerException
+        new_tile = table.yama.pop()
+
+        events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
+            events=events, action_client=_action_client, new_tile=new_tile
+        )
+        return events, _action_client, new_tile
 
     @staticmethod
     def _add_tsumo_and_tsumo_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
