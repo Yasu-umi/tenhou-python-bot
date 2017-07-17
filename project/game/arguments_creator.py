@@ -93,7 +93,7 @@ class ArgumentsCreator:
             if kannable_client_tiles is not None:
                 action_client = kannable_client_tiles[0]
                 meld_part = kannable_client_tiles[1]
-                events = ArgumentsCreator._add_min_kan_events(
+                events = ArgumentsCreator._add_min_kan_or_pon_events(
                     events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
                 )
                 events = ArgumentsCreator._add_none_events(
@@ -178,20 +178,28 @@ class ArgumentsCreator:
         return events + ron_agari_events
 
     @staticmethod
-    def _add_min_kan_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_part: Tuple[int, int, int]) -> List['Event']:
-        min_kan_events: List['Event'] = []
+    def _add_min_kan_or_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_part: Tuple[int, int, int]) -> List['Event']:
+        min_kan_or_pon_events: List['Event'] = []
         for tile in action_client.tiles:
             # 喰い替え防止の条件
             if (tile // 4) != (new_tile // 4):
                 discard_tile = tile
-                min_kan_events.append(
+                min_kan_or_pon_events.append(
                     MinKanDeclarationEvent(
                         player_id=action_client.id,
                         discard_tile=discard_tile,
                         meld_tiles=(discard_tile, meld_part[0], meld_part[1], meld_part[2]),
                     )
                 )
-        return events + min_kan_events
+                for pon_meld_part in [(meld_part[0], meld_part[1]), (meld_part[0], meld_part[2]), (meld_part[1], meld_part[2])]:
+                    min_kan_or_pon_events.append(
+                        PonEvent(
+                            player_id=action_client.id,
+                            discard_tile=discard_tile,
+                            meld_tiles=(discard_tile, pon_meld_part[0], pon_meld_part[1]),
+                        )
+                    )
+        return events + min_kan_or_pon_events
 
     @staticmethod
     def _add_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_parts: List[Tuple[int, int]]) -> List['Event']:
@@ -228,8 +236,6 @@ class ArgumentsCreator:
             tiles = [tile for tile in client.tiles if (tile // 4) == (discard_tile // 4)]
             if len(tiles) == 2:
                 return client, [(tiles[0], tiles[1])]
-            if len(tiles) == 3:
-                return client, [(tiles[0], tiles[1]), (tiles[0], tiles[2]), (tiles[1], tiles[2])]
         return None
 
     @staticmethod
