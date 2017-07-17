@@ -23,3 +23,7 @@ class NotFoundDiscardTileException(Exception):
 
 class NotFromWhoException(Exception):
     pass
+
+
+class NotFoundNextSeatPlayerException(Exception):
+    pass

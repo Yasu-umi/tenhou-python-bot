@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
-from game.exceptions import ThisRoundAlreadyEndsException
+from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlayerException
 from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
@@ -49,7 +49,10 @@ class ArgumentsCreator:
             raise ThisRoundAlreadyEndsException
 
         if last_event is None:
-            action_client = table.client0
+            next_player_seat = 0
+            action_client = next(filter(lambda x: x.seat == next_player_seat, table.clients), None)
+            if action_client is None:
+                raise NotFoundNextSeatPlayerException
             new_tile = table.yama.pop()
 
             events = ArgumentsCreator._add_tsumo_events(
@@ -122,8 +125,11 @@ class ArgumentsCreator:
             )
             return events, action_client, new_tile
 
-        next_player_id = 0 if 2 < last_event.player_id else last_event.player_id + 1
-        action_client = table.clients[next_player_id]
+        last_event_player_seat = table.clients[last_event.player_id].seat
+        next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
+        if action_client is None:
+            raise NotFoundNextSeatPlayerException
         new_tile = table.yama.pop()
 
         events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
