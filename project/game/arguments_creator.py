@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import List, Tuple, Optional
+import itertools
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
@@ -7,6 +8,7 @@ from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlaye
 from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
+from mahjong.constants import TERMINAL_INDICES
 from mahjong.tile import TilesConverter
 
 from typing import TYPE_CHECKING
@@ -79,38 +81,63 @@ class ArgumentsCreator:
             )
             return events, action_client, new_tile
 
-        if isinstance(last_event, TsumoEvent) or isinstance(last_event, PonEvent) or isinstance(last_event, ChiEvent):
-            next_player_id = 0 if 2 < last_event.player_id else last_event.player_id + 1
-            action_client = table.clients[next_player_id]
+        if isinstance(last_event, TsumoEvent) or isinstance(last_event, PonEvent) or isinstance(last_event, ChiEvent) or isinstance(last_event, RinshanTsumoEvent):
             new_tile = last_event.discard_tile
 
-            other_clients = [client for client in table.clients if action_client.id != client.id]
+            last_event_player_seat = table.clients[last_event.player_id].seat
+            # ポン・カン・アガリの判定を行う順番に並んだplayerの配列
+            next_players = []
+            for i in range(1, 4):
+                next_player_seat = last_event_player_seat + i - 3 if 2 < last_event_player_seat + i else last_event_player_seat + i
+                next_player = next(filter(lambda x: x.seat == next_player_seat, table.clients), None)
+                if next_player is None:
+                    raise NotFoundNextSeatPlayerException
+                next_players.append(next_player)
+            for next_player in next_players:
+                action_client = next_player
 
-            events = ArgumentsCreator._add_ron_agari_events(
-                events=events, action_client=action_client, new_tile=new_tile
-            )
-
-            kannable_client_tiles = ArgumentsCreator._get_kannable_client_tiles(
-                clients=other_clients, discard_tile=new_tile
-            )
-            if kannable_client_tiles is not None:
-                action_client = kannable_client_tiles[0]
-                meld_part = kannable_client_tiles[1]
-                events = ArgumentsCreator._add_min_kan_or_pon_events(
-                    events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
+                events = ArgumentsCreator._add_ron_agari_events(
+                    events=events, action_client=action_client, new_tile=new_tile
                 )
-                events = ArgumentsCreator._add_none_events(
-                    events=events, action_client=action_client
-                )
-                return events, action_client, new_tile
 
-            ponnable_client_tiles = ArgumentsCreator._get_ponnable_client_tiles(
-                clients=other_clients, discard_tile=new_tile
+                kannable_tiles = ArgumentsCreator._get_kannable_tiles(
+                    action_client=action_client, discard_tile=new_tile
+                )
+                if kannable_tiles is not None:
+                    meld_part = kannable_tiles
+                    events = ArgumentsCreator._add_min_kan_events(
+                        events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
+                    )
+
+                ponnable_tiles = ArgumentsCreator._get_ponnable_tiles(
+                    action_client=action_client, discard_tile=new_tile
+                )
+                if ponnable_tiles is not None:
+                    meld_parts = ponnable_tiles
+                    events = ArgumentsCreator._add_pon_events(
+                        events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
+                    )
+
+                # ポン・カン・アガリのいずれも不可能であった場合、次のプレイヤーを見る
+                if len(events) > 0:
+                    events = ArgumentsCreator._add_none_events(
+                        events=events, action_client=action_client
+                    )
+                    return events, action_client, new_tile
+                else:
+                    next
+
+            # 全てのプレイヤーがポン・カン・アガリのいずれも不可能であった場合、チーが可能か見る
+            chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+            action_client = next(filter(lambda x: x is not None and x.seat == chiable_seat, table.clients), None)
+            if action_client is None:
+                raise NotFoundNextSeatPlayerException
+            chiable_tiles = ArgumentsCreator._get_chiable_tiles(
+                action_client=action_client, discard_tile=new_tile
             )
-            if ponnable_client_tiles is not None:
-                action_client = ponnable_client_tiles[0]
-                meld_parts = ponnable_client_tiles[1]
-                events = ArgumentsCreator._add_pon_events(
+            if chiable_tiles is not None:
+                meld_parts = chiable_tiles
+                events = ArgumentsCreator._add_chi_events(
                     events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
                 )
                 events = ArgumentsCreator._add_none_events(
@@ -118,6 +145,11 @@ class ArgumentsCreator:
                 )
                 return events, action_client, new_tile
 
+            # 全てのプレイヤーがポン・カン・アガリ・チーのいずれも不可能であった場合、次のツモに移行
+            next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+            action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
+            if action_client is None:
+                raise NotFoundNextSeatPlayerException
             new_tile = table.yama.pop()
 
             events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
@@ -184,65 +216,119 @@ class ArgumentsCreator:
         return events + ron_agari_events
 
     @staticmethod
-    def _add_min_kan_or_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_part: Tuple[int, int, int]) -> List['Event']:
-        min_kan_or_pon_events: List['Event'] = []
+    def _add_min_kan_events(
+        events: List['Event'],
+        action_client: 'GameClient',
+        new_tile: int,
+        meld_part: Tuple[int, int, int],
+    ) -> List['Event']:
+        min_kan_events: List['Event'] = []
         for tile in action_client.tiles:
             # 喰い替え防止の条件
             if (tile // 4) != (new_tile // 4):
                 discard_tile = tile
-                min_kan_or_pon_events.append(
+                min_kan_events.append(
                     MinKanDeclarationEvent(
                         player_id=action_client.id,
                         discard_tile=discard_tile,
-                        meld_tiles=(discard_tile, meld_part[0], meld_part[1], meld_part[2]),
+                        meld_tiles=(new_tile, meld_part[0], meld_part[1], meld_part[2]),
                     )
                 )
-                for pon_meld_part in [(meld_part[0], meld_part[1]), (meld_part[0], meld_part[2]), (meld_part[1], meld_part[2])]:
-                    min_kan_or_pon_events.append(
+        return events + min_kan_events
+
+    @staticmethod
+    def _add_pon_events(
+        events: List['Event'],
+        action_client: 'GameClient',
+        new_tile: int,
+        meld_parts: List[Tuple[int, int]],
+    ) -> List['Event']:
+        pon_events: List['Event'] = []
+        for tile in action_client.tiles:
+            discard_tile = tile
+            for meld_part in meld_parts:
+                # 喰い替え防止の条件
+                if (tile // 4) != (new_tile // 4):
+                    pon_events.append(
                         PonEvent(
                             player_id=action_client.id,
                             discard_tile=discard_tile,
-                            meld_tiles=(discard_tile, pon_meld_part[0], pon_meld_part[1]),
+                            meld_tiles=(new_tile, meld_part[0], meld_part[1]),
                         )
                     )
-        return events + min_kan_or_pon_events
+        return events + pon_events
 
     @staticmethod
-    def _add_pon_events(events: List['Event'], action_client: 'GameClient', new_tile: int, meld_parts: List[Tuple[int, int]]) -> List['Event']:
-        pon_events: List['Event'] = []
+    def _add_chi_events(
+        events: List['Event'],
+        action_client: 'GameClient',
+        new_tile: int,
+        meld_parts: List[Tuple[int, int]],
+    ) -> List['Event']:
+        chi_events: List['Event'] = []
         for tile in action_client.tiles:
-            # 喰い替え防止の条件
-            if (tile // 4) != (new_tile // 4):
-                discard_tile = tile
-                pon_events.extend([
-                    PonEvent(
-                        player_id=action_client.id,
-                        discard_tile=discard_tile,
-                        meld_tiles=(discard_tile, meld_part[0], meld_part[1]),
+            discard_tile = tile
+            for meld_part in meld_parts:
+                # 喰い替え防止の条件作成
+                cant_discard_tiles_34 = sorted([new_tile //4, meld_part[0] // 4, meld_part[1] // 4])
+                # 前後の牌は同じ種類の数牌の場合、喰い替えに該当
+                if ((cant_discard_tiles_34[0] - 1) // 9) == (cant_discard_tiles_34[0] // 9):
+                    cant_discard_tiles_34.append(cant_discard_tiles_34[0] - 1)
+                if ((cant_discard_tiles_34[2] + 1) // 9) == (cant_discard_tiles_34[2] // 9):
+                    cant_discard_tiles_34.append(cant_discard_tiles_34[2] + 1)
+                if (tile // 4) not in cant_discard_tiles_34:
+                    chi_events.append(
+                        ChiEvent(
+                            player_id=action_client.id,
+                            discard_tile=discard_tile,
+                            meld_tiles=(new_tile, meld_part[0], meld_part[1]),
+                        )
                     )
-                    for meld_part in meld_parts
-                ])
-        return events + pon_events
+        return events + chi_events
 
     @staticmethod
     def _add_none_events(events: List['Event'], action_client: 'GameClient') -> List['Event']:
         return events + [NoneEvent(player_id=action_client.id)]
 
     @staticmethod
-    def _get_kannable_client_tiles(clients: List['GameClient'], discard_tile: int) -> Optional[Tuple['GameClient', Tuple[int, int, int]]]:
-        for client in clients:
-            tiles = [tile for tile in client.tiles if (tile // 4) == (discard_tile // 4)]
-            if len(tiles) == 3:
-                return client, (tiles[0], tiles[1], tiles[2])
+    def _get_kannable_tiles(action_client: 'GameClient', discard_tile: int) -> Optional[Tuple[int, int, int]]:
+        tiles = [tile for tile in action_client.tiles if (tile // 4) == (discard_tile // 4)]
+        if len(tiles) == 3:
+            return (tiles[0], tiles[1], tiles[2])
         return None
 
     @staticmethod
-    def _get_ponnable_client_tiles(clients: List['GameClient'], discard_tile: int) -> Optional[Tuple['GameClient', List[Tuple[int, int]]]]:
-        for client in clients:
-            tiles = [tile for tile in client.tiles if (tile // 4) == (discard_tile // 4)]
-            if len(tiles) == 2:
-                return client, [(tiles[0], tiles[1])]
+    def _get_ponnable_tiles(action_client: 'GameClient', discard_tile: int) -> Optional[List[Tuple[int, int]]]:
+        tiles = [tile for tile in action_client.tiles if (tile // 4) == (discard_tile // 4)]
+        if len(tiles) == 2:
+            return [(tiles[0], tiles[1])]
+        if len(tiles) == 3:
+            return [(tiles[0], tiles[1]), (tiles[0], tiles[2]), (tiles[1], tiles[2])]
         return None
+
+    @staticmethod
+    def _get_chiable_tiles(action_client: 'GameClient', discard_tile: int) -> Optional[List[Tuple[int, int]]]:
+        meld_parts = None
+        discard_tile_34 = discard_tile // 4
+        # 3パターンあるが、同じ種類の数牌のみ
+        meld_parts_34 = filter(
+            lambda x: (x[0] // 9) == (discard_tile_34 // 9) and (x[1] // 9) == (discard_tile_34 // 9),
+            [
+                (discard_tile_34 - 2, discard_tile_34 - 1),
+                (discard_tile_34 - 1, discard_tile_34 + 1),
+                (discard_tile_34 + 1, discard_tile_34 + 2),
+            ]
+        )
+        for meld_part_34 in meld_parts_34:
+            tile_1s = list(filter(lambda x: x // 4 == meld_part_34[0], action_client.tiles))
+            tile_2s = list(filter(lambda x: x // 4 == meld_part_34[1], action_client.tiles))
+            if len(tile_1s) > 0 and len(tile_2s) > 0:
+                for tile_1, tile_2 in itertools.product(tile_1s, tile_2s):
+                    if meld_parts is None:
+                        meld_parts = []
+                    meld_parts.append((tile_1, tile_2))
+            pass
+        return meld_parts
 
     @staticmethod
     def _is_agari(tiles: List[int], melds: List['Meld']) -> bool:
