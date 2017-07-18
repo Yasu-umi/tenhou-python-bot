@@ -5,10 +5,13 @@ import copy
 
 from mahjong.ai.defence.enemy_analyzer import EnemyAnalyzer
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
-from mahjong.table import Table
 from mahjong.meld import Meld
 from mahjong.tile import TilesConverter, Tile
 from utils.settings_handler import settings
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from mahjong.table import Table
 
 logger = logging.getLogger('tenhou')
 
@@ -30,7 +33,7 @@ class PlayerInterface(object):
 
     previous_ai = False
 
-    def __init__(self, table: Table, seat: int, dealer_seat: int, previous_ai):
+    def __init__(self, table: 'Table', seat: int, dealer_seat: int, previous_ai):
         self.table = table
         self.seat = seat
         self.dealer_seat = dealer_seat
@@ -59,7 +62,7 @@ class PlayerInterface(object):
         self.scores = None
         self.uma = 0
 
-    def add_called_meld(self, meld: Meld):
+    def add_called_meld(self, meld: 'Meld'):
         # we already added chankan as a pon set
         if meld.type == Meld.CHANKAN:
             return
@@ -208,7 +211,7 @@ class Player(PlayerInterface):
         if self.ai.defence.should_go_to_defence_mode():
             self.ai.in_defence = True
 
-    def add_called_meld(self, meld: Meld):
+    def add_called_meld(self, meld: 'Meld'):
         # we had to remove tile from the hand for closed kan set
         if (meld.type == Meld.KAN or meld.type == Meld.CHANKAN) and not meld.opened:
             self.tiles.remove(meld.called_tile)

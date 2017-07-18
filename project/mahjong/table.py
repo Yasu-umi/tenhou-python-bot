@@ -65,7 +65,7 @@ class Table(object):
         # 13 - tiles in each player hand
         self.count_of_remaining_tiles = 136 - 14 - self.count_of_players * 13
 
-    def add_called_meld(self, player_seat: int, meld: Meld):
+    def add_called_meld(self, player_seat: int, meld: 'Meld'):
         # when opponent called meld it is means
         # that he discards tile from hand, not from wall
         self.count_of_remaining_tiles += 1
