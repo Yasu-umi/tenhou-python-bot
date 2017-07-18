@@ -146,7 +146,7 @@ class ActionExcutor:
         from_who = next(filter(lambda x: x.seat == from_seat, Observation.players)) if from_seat is not None else None
         if from_who is None:
             raise NotFromWhoException
-        meld = Meld(
+        meld = Meld.init(
             who=Observation.player,
             tiles=list(selected_event.meld_tiles),
             type=type,
@@ -191,7 +191,7 @@ class ActionExcutor:
         from_seat = table.clients[from_event.player_id].seat if from_event is not None else None
         # AnKanDeclarationの場合from_whoはNoneになる
         from_who = next(filter(lambda x: x.seat == from_seat, Observation.players)) if from_seat is not None else None
-        meld = Meld(
+        meld = Meld.init(
             who=Observation.player,
             tiles=list(selected_event.meld_tiles),
             type=type,

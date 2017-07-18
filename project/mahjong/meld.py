@@ -26,21 +26,22 @@ class Meld(Generic[P]):
     # we need it to distinguish opened and closed kan
     opened: bool = True
 
-    def __init__(
-        self,
+    def init(
         type: TYPE,
         tiles: List[int],
         called_tile: int,
         who: Optional[P] = None,
         from_who: Optional[P] = None,
         opened: bool = True,
-    ) -> None:
-        self.who = who
-        self.tiles = tiles
-        self.type = type
-        self.from_who = from_who
-        self.called_tile = called_tile
-        self.opened = opened
+    ) -> 'Meld':
+        meld = Meld()
+        meld.who = who
+        meld.tiles = tiles
+        meld.type = type
+        meld.from_who = from_who
+        meld.called_tile = called_tile
+        meld.opened = opened
+        return meld
 
     def __str__(self) -> str:
         return 'Type: {}, Tiles: {} {}'.format(self.type, TilesConverter.to_one_line_string(self.tiles), self.tiles)
