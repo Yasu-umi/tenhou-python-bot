@@ -9,6 +9,7 @@ from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscard
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
                         Event)
+from game.seat_iterator import SeatsIterator
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
@@ -34,6 +35,10 @@ class GameTable(object):
     @property
     def clients(self) -> List['GameClient']:
         return [self.client0, self.client1, self.client2, self.client3]
+
+    @property
+    def clients_loop_iter_orderby_seat(self) -> 'SeatsIterator':
+        return SeatsIterator(self.clients)
 
     @property
     def open_dora_indicators(self) -> List[int]:

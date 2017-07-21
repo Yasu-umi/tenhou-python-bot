@@ -4,7 +4,7 @@ import itertools
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
-from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlayerException
+from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlayerException, FirstEventIsNoneException
 from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
@@ -65,6 +65,36 @@ class ArgumentsCreator:
             )
             # TODO: KyushuKyuhaiEventを加える
             return events, action_client, new_tile
+
+        if isinstance(last_event, NoneEvent):
+            last_not_none_event: Optional['Event'] = None
+            none_events: List['NoneEvent'] = []
+            for event in reversed(table.selected_events):
+                none_events.append(event)
+                if not isinstance(event, NoneEvent):
+                    last_not_none_event = event
+                    break
+            if last_not_none_event is None:
+                raise FirstEventIsNoneException
+            if last_not_none_event.has_discard_tile:
+                last_event_player_seat = table.clients[last_not_none_event.player_id].seat
+                next_players: List['GameClient'] = []
+                new_tile = last_not_none_event.discard_tile
+
+                addFlag = False
+                for client in table.clients_loop_iter_orderby_seat:
+                    if client.seat == table.clients[last_event.player_id].seat + 1:
+                        addFlag = True
+                    if client.seat == last_event_player_seat:
+                        addFlag = False
+                        break
+                    if addFlag:
+                        next_players.append(client)
+                return ArgumentsCreator._after_has_discard_event(
+                    table=table, last_event_player_seat=last_event_player_seat, next_players=next_players, new_tile=new_tile
+                )
+            else:
+                raise 'NotImplimented'
 
         if isinstance(last_event, AnKanDeclarationEvent) or isinstance(last_event, MinKanDeclarationEvent):
             next_player_id = last_event.player_id

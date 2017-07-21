@@ -27,3 +27,7 @@ class NotFromWhoException(Exception):
 
 class NotFoundNextSeatPlayerException(Exception):
     pass
+
+
+class FirstEventIsNoneException(Exception):
+    pass
