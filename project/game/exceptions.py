@@ -31,3 +31,11 @@ class NotFoundNextSeatPlayerException(Exception):
 
 class FirstEventIsNoneException(Exception):
     pass
+
+
+class NotFoundLastEventPlayerException(Exception):
+    pass
+
+
+class NotFoundlastDiscardEventException(Exception):
+    pass

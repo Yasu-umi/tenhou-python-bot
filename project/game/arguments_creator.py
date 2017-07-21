@@ -4,7 +4,7 @@ import itertools
 
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent)
-from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlayerException, FirstEventIsNoneException
+from game.exceptions import ThisRoundAlreadyEndsException, NotFoundNextSeatPlayerException, FirstEventIsNoneException, NotFoundLastEventPlayerException, NotFoundlastDiscardEventException, NotFoundNewTileException
 from game.observation import Observation, OwnPlayer, EnemyPlayer
 
 from mahjong.ai.agari import Agari
@@ -46,9 +46,46 @@ class ArgumentsCreator:
         last_event: Optional['Event'] = table.selected_events[-1] if len(table.selected_events) > 0 else None
         events: List['Event'] = []
         new_tile: Optional[int] = None
+        next_players: List['GameClient'] = []
 
-        if isinstance(last_event, RonAgariEvent) or isinstance(last_event, TsumoAgariEvent):
+        if isinstance(last_event, TsumoAgariEvent):
             raise ThisRoundAlreadyEndsException
+
+        if isinstance(last_event, RonAgariEvent):
+            last_not_ron_event: Optional['Event'] = None
+            ron_events: List['RonAgariEvent'] = []
+            for event in reversed(table.selected_events):
+                if isinstance(event, RonAgariEvent):
+                    ron_events.append(event)
+                else:
+                    last_not_ron_event = event
+                    break
+            if (last_not_ron_event is None) or (not last_not_ron_event.has_discard_tile):
+                raise NotFoundlastDiscardEventException
+            if len(ron_events) > 2:
+                raise ThisRoundAlreadyEndsException
+            else:
+                last_event_player = table.clients[last_not_ron_event.player_id]
+                new_tile = last_not_ron_event.discard_tile
+                if new_tile is None:
+                    raise NotFoundNewTileException
+
+                addFlag = False
+                for client in table.clients_loop_iter_orderby_seat:
+                    if client is None:
+                        raise NotFoundNextSeatPlayerException
+                    if client.seat == table.clients[last_event.player_id].seat + 1:
+                        addFlag = True
+                    if client.seat == last_event_player.seat:
+                        addFlag = False
+                        break
+                    if addFlag:
+                        next_players.append(client)
+                return ArgumentsCreator._after_has_discard_event(
+                    table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile,
+                    only_ron=True,
+                )
+
 
         if last_event is None:
             next_player_seat = 0
@@ -67,32 +104,47 @@ class ArgumentsCreator:
             return events, action_client, new_tile
 
         if isinstance(last_event, NoneEvent):
+            last_has_discard_event: Optional['Event'] = None
             last_not_none_event: Optional['Event'] = None
-            none_events: List['NoneEvent'] = []
             for event in reversed(table.selected_events):
-                none_events.append(event)
+                if event.has_discard_tile:
+                    last_has_discard_event = event
                 if not isinstance(event, NoneEvent):
                     last_not_none_event = event
                     break
-            if last_not_none_event is None:
+
+            if last_not_none_event is None or last_has_discard_event is None:
                 raise FirstEventIsNoneException
-            if last_not_none_event.has_discard_tile:
-                last_event_player_seat = table.clients[last_not_none_event.player_id].seat
-                next_players: List['GameClient'] = []
-                new_tile = last_not_none_event.discard_tile
+            if last_not_none_event.has_discard_tile or isinstance(last_not_none_event, RonAgariEvent):
+                last_event_player = table.clients[last_has_discard_event.player_id]
+                if last_event_player is None:
+                    raise NotFoundLastEventPlayerException
+                new_tile = last_has_discard_event.discard_tile
+                if new_tile is None:
+                    raise NotFoundNewTileException
 
                 addFlag = False
                 for client in table.clients_loop_iter_orderby_seat:
+                    if client is None:
+                        raise NotFoundNextSeatPlayerException
                     if client.seat == table.clients[last_event.player_id].seat + 1:
                         addFlag = True
-                    if client.seat == last_event_player_seat:
+                    if client.seat == last_event_player.seat:
                         addFlag = False
                         break
                     if addFlag:
                         next_players.append(client)
                 return ArgumentsCreator._after_has_discard_event(
-                    table=table, last_event_player_seat=last_event_player_seat, next_players=next_players, new_tile=new_tile
+                    table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile,
+                    only_ron=isinstance(last_not_none_event, RonAgariEvent),
                 )
+            if last_not_none_event.is_kan_declaration:
+                action_client = table.clients[last_not_none_event.player_id]
+                new_tile = table.rinshanhai.pop()
+                events = ArgumentsCreator._add_rinshan_tsumo_events(
+                    events=events, action_client=action_client, new_tile=new_tile
+                )
+                return events, action_client, new_tile
             else:
                 raise 'NotImplimented'
 
@@ -114,23 +166,29 @@ class ArgumentsCreator:
 
         if last_event.has_discard_tile:
             new_tile = last_event.discard_tile
+            if new_tile is None:
+                raise NotFoundNewTileException
 
-            last_event_player_seat = table.clients[last_event.player_id].seat
+            last_event_player = table.clients[last_event.player_id]
+            if last_event_player is None:
+                raise NotFoundLastEventPlayerException
             # ポン・カン・アガリの判定を行う順番に並んだplayerの配列
             next_players = []
             for i in range(1, 4):
-                next_player_seat = last_event_player_seat + i - 3 if 2 < last_event_player_seat + i else last_event_player_seat + i
+                next_player_seat = last_event_player.seat + i - 3 if 2 < last_event_player.seat + i else last_event_player.seat + i
                 next_player = next(filter(lambda x: x.seat == next_player_seat, table.clients), None)
                 if next_player is None:
                     raise NotFoundNextSeatPlayerException
                 next_players.append(next_player)
 
             return ArgumentsCreator._after_has_discard_event(
-                table=table, last_event_player_seat=last_event_player_seat, next_players=next_players, new_tile=new_tile
+                table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile
             )
 
-        last_event_player_seat = table.clients[last_event.player_id].seat
-        next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        last_event_player = table.clients[last_event.player_id]
+        if last_event_player is None:
+            raise NotFoundLastEventPlayerException
+        next_player_seat = 0 if 2 < last_event_player.seat else last_event_player.seat + 1
         action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
         if action_client is None:
             raise NotFoundNextSeatPlayerException
@@ -147,6 +205,7 @@ class ArgumentsCreator:
         last_event_player_seat: int,
         next_players: List['GameClient'],
         new_tile: int,
+        only_ron: bool = False,
     ) -> Tuple[List['Event'], 'GameClient', Optional[int]]:
         events: List['Event'] = []
         for next_player in next_players:
@@ -155,24 +214,24 @@ class ArgumentsCreator:
             events = ArgumentsCreator._add_ron_agari_events(
                 events=events, action_client=action_client, new_tile=new_tile
             )
-
-            kannable_tiles = ArgumentsCreator._get_kannable_tiles(
-                action_client=action_client, discard_tile=new_tile
-            )
-            if kannable_tiles is not None:
-                meld_part = kannable_tiles
-                events = ArgumentsCreator._add_min_kan_events(
-                    events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
+            if not only_ron:
+                kannable_tiles = ArgumentsCreator._get_kannable_tiles(
+                    action_client=action_client, discard_tile=new_tile
                 )
+                if kannable_tiles is not None:
+                    meld_part = kannable_tiles
+                    events = ArgumentsCreator._add_min_kan_events(
+                        events=events, action_client=action_client, new_tile=new_tile, meld_part=meld_part
+                    )
 
-            ponnable_tiles = ArgumentsCreator._get_ponnable_tiles(
-                action_client=action_client, discard_tile=new_tile
-            )
-            if ponnable_tiles is not None:
-                meld_parts = ponnable_tiles
-                events = ArgumentsCreator._add_pon_events(
-                    events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
+                ponnable_tiles = ArgumentsCreator._get_ponnable_tiles(
+                    action_client=action_client, discard_tile=new_tile
                 )
+                if ponnable_tiles is not None:
+                    meld_parts = ponnable_tiles
+                    events = ArgumentsCreator._add_pon_events(
+                        events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
+                    )
 
             # ポン・カン・アガリのいずれも不可能であった場合、次のプレイヤーを見る
             if len(events) > 0:
@@ -180,12 +239,12 @@ class ArgumentsCreator:
                 chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
                 if action_client.seat == chiable_seat:
                     chiable_tiles = ArgumentsCreator._get_chiable_tiles(
-                        action_client=_action_client, discard_tile=new_tile
+                        action_client=action_client, discard_tile=new_tile
                     )
                     if chiable_tiles is not None:
                         meld_parts = chiable_tiles
                         events = ArgumentsCreator._add_chi_events(
-                            events=events, action_client=_action_client, new_tile=new_tile, meld_parts=meld_parts
+                            events=events, action_client=action_client, new_tile=new_tile, meld_parts=meld_parts
                         )
                 events = ArgumentsCreator._add_none_events(
                     events=events, action_client=action_client
@@ -193,6 +252,9 @@ class ArgumentsCreator:
                 return events, action_client, new_tile
             else:
                 continue
+
+        if only_ron:
+            raise ThisRoundAlreadyEndsException
 
         # 全てのプレイヤーがポン・カン・アガリのいずれも不可能であった場合、チーが可能か見る
         chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
@@ -286,7 +348,6 @@ class ArgumentsCreator:
                 min_kan_events.append(
                     MinKanDeclarationEvent(
                         player_id=action_client.id,
-                        discard_tile=discard_tile,
                         meld_tiles=(new_tile, meld_part[0], meld_part[1], meld_part[2]),
                     )
                 )

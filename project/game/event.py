@@ -23,6 +23,11 @@ class EventBase(object):
             or isinstance(self, RinshanTsumoEvent) \
             or isinstance(self, RiichiEvent)
 
+    @property
+    def is_kan_declaration(self) -> bool:
+        return isinstance(self, AnKanDeclarationEvent) \
+            or isinstance(self, MinKanDeclarationEvent)
+
     def __str__(self) -> str:
         return "player_id: {}, type: {}, discard_tile: {}, meld_tiles: {}".format(
             self.player_id, self.type, self.discard_tile, self.meld_tiles
@@ -88,7 +93,6 @@ class AnKanDeclarationEvent(EventBase):
     def __init__(self, player_id: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'an_kan_declaration'
-        self.discard_tile = discard_tile
         self.meld_tiles = meld_tiles
 
 
@@ -109,7 +113,6 @@ class KaKanDeclarationEvent(EventBase):
     def __init__(self, player_id: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'ka_kan_declaration'
-        self.discard_tile = discard_tile
         self.meld_tiles = meld_tiles
 
 

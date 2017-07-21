@@ -9,7 +9,7 @@ from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscard
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
                         Event)
-from game.seat_iterator import SeatsIterator
+from game.seats_iterator import SeatsIterator
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
 from mahjong.hand import FinishedHand
