@@ -11,7 +11,17 @@ class EventBase(object):
 
     @property
     def is_agari(self) -> bool:
-        return isinstance(self, TsumoAgariEvent) or isinstance(self, RonAgariEvent) or isinstance(self, ChanKanAgariEvent)
+        return isinstance(self, TsumoAgariEvent) \
+            or isinstance(self, RonAgariEvent) \
+            or isinstance(self, ChanKanAgariEvent)
+
+    @property
+    def has_discard_tile(self) -> bool:
+        return isinstance(self, PonEvent) \
+            or isinstance(self, ChiEvent) \
+            or isinstance(self, TsumoEvent) \
+            or isinstance(self, RinshanTsumoEvent) \
+            or isinstance(self, RiichiEvent)
 
     def __str__(self) -> str:
         return "player_id: {}, type: {}, discard_tile: {}, meld_tiles: {}".format(
@@ -72,10 +82,10 @@ class ChiEvent(EventBase):
 
 
 class AnKanDeclarationEvent(EventBase):
-    discard_tile: int
+    discard_tile: None = None
     meld_tiles: Tuple[int, int, int, int]
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
+    def __init__(self, player_id: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'an_kan_declaration'
         self.discard_tile = discard_tile
@@ -83,21 +93,20 @@ class AnKanDeclarationEvent(EventBase):
 
 
 class MinKanDeclarationEvent(EventBase):
-    discard_tile: int
+    discard_tile: None = None
     meld_tiles: Tuple[int, int, int, int]
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
+    def __init__(self, player_id: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'min_kan_declaration'
-        self.discard_tile = discard_tile
         self.meld_tiles = meld_tiles
 
 
 class KaKanDeclarationEvent(EventBase):
-    discard_tile: int
+    discard_tile: None = None
     meld_tiles: Tuple[int, int, int, int]
 
-    def __init__(self, player_id: int, discard_tile: int, meld_tiles: Tuple[int, int, int, int]) -> None:
+    def __init__(self, player_id: int, meld_tiles: Tuple[int, int, int, int]) -> None:
         self.player_id = player_id
         self.type = 'ka_kan_declaration'
         self.discard_tile = discard_tile

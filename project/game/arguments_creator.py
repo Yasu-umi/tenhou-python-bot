@@ -82,10 +82,7 @@ class ArgumentsCreator:
             )
             return events, action_client, new_tile
 
-        if isinstance(last_event, TsumoEvent) \
-            or isinstance(last_event, PonEvent) \
-            or isinstance(last_event, ChiEvent) \
-            or isinstance(last_event, RinshanTsumoEvent):
+        if last_event.has_discard_tile:
             new_tile = last_event.discard_tile
 
             last_event_player_seat = table.clients[last_event.player_id].seat
