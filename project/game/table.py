@@ -88,6 +88,21 @@ class GameTable(object):
         self.is_aka = is_aka
 
         self._init_round()
+    
+    def clients_by_seat_range(start: int = 0, end: = 4):
+        addFlag = False
+        clients: List['GameClient'] = []
+        for client in self.clients_loop_iter_orderby_seat:
+            if client is None:
+                raise NotFoundNextSeatPlayerException
+            if client.seat == start:
+                addFlag = True
+            if client.seat == end - 1:
+                addFlag = False
+                break
+            if addFlag:
+                clients.append(client)
+        return clients
 
     def next_action(self) -> bool:
         """

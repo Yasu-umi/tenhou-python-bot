@@ -64,27 +64,22 @@ class ArgumentsCreator:
                 raise NotFoundlastDiscardEventException
             if len(ron_events) > 2:
                 raise ThisRoundAlreadyEndsException
-            else:
-                last_event_player = table.clients[last_not_ron_event.player_id]
-                new_tile = last_not_ron_event.discard_tile
-                if new_tile is None:
-                    raise NotFoundNewTileException
+            last_event_player = table.clients[last_not_ron_event.player_id]
+            new_tile = last_not_ron_event.discard_tile
+            if new_tile is None:
+                raise NotFoundNewTileException
 
-                addFlag = False
-                for client in table.clients_loop_iter_orderby_seat:
-                    if client is None:
-                        raise NotFoundNextSeatPlayerException
-                    if client.seat == table.clients[last_event.player_id].seat + 1:
-                        addFlag = True
-                    if client.seat == last_event_player.seat:
-                        addFlag = False
-                        break
-                    if addFlag:
-                        next_players.append(client)
-                return ArgumentsCreator._after_has_discard_event(
-                    table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile,
-                    only_ron=True,
-                )
+            next_players = table.clients_by_seat_range(
+                start=table.clients[last_event.player_id].seat + 1,
+                end=last_event_player.seat
+            )
+            return ArgumentsCreator._after_has_discard_event(
+                table=table,
+                last_event_player_seat=last_event_player.seat,
+                next_players=next_players,
+                new_tile=new_tile,
+                only_ron=True,
+            )
 
 
         if last_event is None:
@@ -135,7 +130,10 @@ class ArgumentsCreator:
                     if addFlag:
                         next_players.append(client)
                 return ArgumentsCreator._after_has_discard_event(
-                    table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile,
+                    table=table,
+                    last_event_player_seat=last_event_player.seat,
+                    next_players=next_players,
+                    new_tile=new_tile,
                     only_ron=isinstance(last_not_none_event, RonAgariEvent),
                 )
             if last_not_none_event.is_kan_declaration:
@@ -145,8 +143,7 @@ class ArgumentsCreator:
                     events=events, action_client=action_client, new_tile=new_tile
                 )
                 return events, action_client, new_tile
-            else:
-                raise 'NotImplimented'
+            raise 'NotImplimented'
 
         if isinstance(last_event, AnKanDeclarationEvent) or isinstance(last_event, MinKanDeclarationEvent):
             next_player_id = last_event.player_id
@@ -182,7 +179,10 @@ class ArgumentsCreator:
                 next_players.append(next_player)
 
             return ArgumentsCreator._after_has_discard_event(
-                table=table, last_event_player_seat=last_event_player.seat, next_players=next_players, new_tile=new_tile
+                table=table,
+                last_event_player_seat=last_event_player.seat,
+                next_players=next_players,
+                new_tile=new_tile,
             )
 
         last_event_player = table.clients[last_event.player_id]
