@@ -207,7 +207,7 @@ class GameTable(object):
             win_event = client_events[-1] if len(client_events) > 0 else None
             if win_event is None or (not win_event.is_agari):
                 continue
-            last_event = next((event for event in reversed(self.selected_events) if not event.is_agari), None)
+            last_event = next(filter(lambda x: not x.is_agari, reversed(self.selected_events)), None)
             if last_event is None:
                 raise NotFoundLastEventException
             if last_event.discard_tile is None:
