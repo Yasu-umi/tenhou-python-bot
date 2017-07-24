@@ -206,7 +206,7 @@ class GameTable(object):
             client_events = [event for event in self.selected_events if event.player_id == client.id]
             win_event = client_events[-1] if len(client_events) > 0 else None
             if win_event is None or (not win_event.is_agari):
-                next
+                continue
             last_event = next((event for event in reversed(self.selected_events) if not event.is_agari), None)
             if last_event is None:
                 raise NotFoundLastEventException
