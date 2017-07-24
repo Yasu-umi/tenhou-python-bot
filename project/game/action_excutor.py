@@ -105,13 +105,12 @@ class ActionExcutor:
         observation: 'Observation',
         selected_event: 'RiichiEvent',
     ) -> bool:
-        if len([client for client in table.clients if client.in_riichi]) == 3:
-            return True
         client.in_riichi = True
         ActionExcutor._discard(client=client, observation=observation, selected_event=selected_event)
         table.count_of_honba_sticks += 1
-        client.scores += 1000
-        return False
+        client.scores -= 1000
+        # 四家立直の場合ゲーム終了
+        return len([client for client in table.clients if client.in_riichi]) == 4
 
     @staticmethod
     def _execute_pon(
