@@ -64,18 +64,20 @@ class ArgumentsCreator:
                 raise NotFoundlastDiscardEventException
             if len(ron_events) > 2:
                 raise ThisRoundAlreadyEndsException
-            last_event_player = table.clients[last_not_ron_event.player_id]
+
+            last_not_ron_event_player = last_not_ron_event.get_player(table=table)
+            last_event_player = last_event.get_player(table=table)
             new_tile = last_not_ron_event.discard_tile
             if new_tile is None:
                 raise NotFoundNewTileException
 
-            next_players = table.clients_by_seat_range(
-                start=table.clients[last_event.player_id].seat + 1,
-                end=last_event_player.seat
+            next_players = table._clients_by_seat_range(
+                start=last_event_player.seat + 1,
+                end=last_not_ron_event_player.seat
             )
             return ArgumentsCreator._after_has_discard_event(
                 table=table,
-                last_event_player_seat=last_event_player.seat,
+                last_event_player_seat=last_not_ron_event_player.seat,
                 next_players=next_players,
                 new_tile=new_tile,
                 only_ron=True,
@@ -118,17 +120,10 @@ class ArgumentsCreator:
                 if new_tile is None:
                     raise NotFoundNewTileException
 
-                addFlag = False
-                for client in table.clients_loop_iter_orderby_seat:
-                    if client is None:
-                        raise NotFoundNextSeatPlayerException
-                    if client.seat == table.clients[last_event.player_id].seat + 1:
-                        addFlag = True
-                    if client.seat == last_event_player.seat:
-                        addFlag = False
-                        break
-                    if addFlag:
-                        next_players.append(client)
+                next_players = table._clients_by_seat_range(
+                    start=last_event_player.seat + 1,
+                    end=last_event_player.seat
+                )
                 return ArgumentsCreator._after_has_discard_event(
                     table=table,
                     last_event_player_seat=last_event_player.seat,
@@ -172,7 +167,7 @@ class ArgumentsCreator:
             # ポン・カン・アガリの判定を行う順番に並んだplayerの配列
             next_players = []
             for i in range(1, 4):
-                next_player_seat = last_event_player.seat + i - 3 if 2 < last_event_player.seat + i else last_event_player.seat + i
+                next_player_seat = last_event_player.n_next_player_seat(i)
                 next_player = next(filter(lambda x: x.seat == next_player_seat, table.clients), None)
                 if next_player is None:
                     raise NotFoundNextSeatPlayerException
@@ -185,10 +180,8 @@ class ArgumentsCreator:
                 new_tile=new_tile,
             )
 
-        last_event_player = table.clients[last_event.player_id]
-        if last_event_player is None:
-            raise NotFoundLastEventPlayerException
-        next_player_seat = 0 if 2 < last_event_player.seat else last_event_player.seat + 1
+        last_event_player = last_event.get_player(table=table)
+        next_player_seat = last_event_player.next_player_seat
         action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
         if action_client is None:
             raise NotFoundNextSeatPlayerException
@@ -236,7 +229,7 @@ class ArgumentsCreator:
             # ポン・カン・アガリのいずれも不可能であった場合、次のプレイヤーを見る
             if len(events) > 0:
                 # カン・ポン可能なプレイヤーがチーも可能な場合、チーイベントも一緒に渡す
-                chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+                chiable_seat = (last_event_player_seat + 1) % 4
                 if action_client.seat == chiable_seat:
                     chiable_tiles = ArgumentsCreator._get_chiable_tiles(
                         action_client=action_client, discard_tile=new_tile
@@ -257,7 +250,7 @@ class ArgumentsCreator:
             raise ThisRoundAlreadyEndsException
 
         # 全てのプレイヤーがポン・カン・アガリのいずれも不可能であった場合、チーが可能か見る
-        chiable_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        chiable_seat = last_event_player_seat + 1 if last_event_player_seat < 2 else 0
         _action_client = next(filter(lambda x: x is not None and x.seat == chiable_seat, table.clients), None)
         if _action_client is None:
             raise NotFoundNextSeatPlayerException
@@ -276,7 +269,7 @@ class ArgumentsCreator:
                 return events, _action_client, new_tile
 
         # 全てのプレイヤーがポン・カン・アガリ・チーのいずれも不可能であった場合、次のツモに移行
-        next_player_seat = 0 if 2 < last_event_player_seat else last_event_player_seat + 1
+        next_player_seat = chiable_seat
         _action_client = next(filter(lambda x: x is not None and x.seat == next_player_seat, table.clients), None)
         if _action_client is None:
             raise NotFoundNextSeatPlayerException

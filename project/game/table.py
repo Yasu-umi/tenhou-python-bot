@@ -5,10 +5,10 @@ from typing import List
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
 from game.client import ClientInterface, BaseClient, GameClient
-from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
                         Event)
+from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException, NotFoundNextSeatPlayerException
 from game.seats_iterator import SeatsIterator
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
@@ -88,21 +88,6 @@ class GameTable(object):
         self.is_aka = is_aka
 
         self._init_round()
-    
-    def clients_by_seat_range(start: int = 0, end: = 4):
-        addFlag = False
-        clients: List['GameClient'] = []
-        for client in self.clients_loop_iter_orderby_seat:
-            if client is None:
-                raise NotFoundNextSeatPlayerException
-            if client.seat == start:
-                addFlag = True
-            if client.seat == end - 1:
-                addFlag = False
-                break
-            if addFlag:
-                clients.append(client)
-        return clients
 
     def next_action(self) -> bool:
         """
@@ -113,15 +98,15 @@ class GameTable(object):
         if self.ended_round:
             return False
 
-        _observation, events, client = ArgumentsCreator.create(table=self)
+        observation, events, client = ArgumentsCreator.create(table=self)
 
-        selected_event = client.action(_observation=_observation, events=events)
+        selected_event = client.action(observation=observation, events=events)
         self.selected_events.append(selected_event)
 
         self.ended_round = ActionExcutor.execute_action(
             table=self,
             client=client,
-            _observation=_observation,
+            observation=observation,
             selected_event=selected_event,
         )
 
@@ -166,6 +151,21 @@ class GameTable(object):
 
         self._set_yama()
         self._haipai()
+
+    def _clients_by_seat_range(self, start: int = 0, end: int = 4) -> List['GameClient']:
+        addFlag = False
+        clients: List['GameClient'] = []
+        for client in self.clients_loop_iter_orderby_seat:
+            if client is None:
+                raise NotFoundNextSeatPlayerException
+            if client.seat == start:
+                addFlag = True
+            if client.seat == end - 1:
+                addFlag = False
+                break
+            if addFlag:
+                clients.append(client)
+        return clients
 
     def _init_riichi(self) -> None:
         for client in self.clients:

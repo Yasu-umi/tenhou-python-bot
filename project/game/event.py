@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 from typing import Union, Optional, Union, List, Tuple
 
+from game.exceptions import NotFoundNextPlayerException
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from game.client import GameClient  # noqa
+    from game.table import GameTable  # noqa
+
 
 class EventBase(object):
     player_id = 0
@@ -27,6 +34,13 @@ class EventBase(object):
     def is_kan_declaration(self) -> bool:
         return isinstance(self, AnKanDeclarationEvent) \
             or isinstance(self, MinKanDeclarationEvent)
+
+    def get_player(self, table: 'GameTable') -> 'GameClient':
+        next_player_id = (self.player_id + 1) % 4
+        next_player = table.clients[next_player_id]
+        if next_player is None:
+            raise NotFoundNextPlayerException
+        return next_player
 
     def __str__(self) -> str:
         return "player_id: {}, type: {}, discard_tile: {}, meld_tiles: {}".format(

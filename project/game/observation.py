@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import List, Optional
 
+from game.event import Event
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from game.client import GameClient  # noqa
@@ -85,8 +87,8 @@ class EnemyPlayer(PlayerObservation):
 class Observation(object):
     def __init__(
         self,
-        player: OwnPlayer,
-        players: List[PlayerObservation],
+        player: 'OwnPlayer',
+        players: List['PlayerObservation'],
         dealer_seat: int,
         count_of_riichi_sticks: int,
         count_of_honba_sticks: int,
@@ -99,5 +101,4 @@ class Observation(object):
         self.count_of_riichi_sticks = count_of_riichi_sticks
         self.count_of_honba_sticks = count_of_honba_sticks
         self.dora_indicators = dora_indicators
-
         self.events = events

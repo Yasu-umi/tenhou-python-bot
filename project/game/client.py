@@ -18,17 +18,17 @@ class ClientInterface(object):
     def action(
       self,
       events: List['Event'],
-      _observation: 'Observation'
+      observation: 'Observation'
     ) -> 'Event':
         return random.choice(events)
 
 
 class BaseClient(ClientInterface):
-    def _calculate_shanten(self, _observation: 'Observation', event: 'Event') -> int:
+    def _calculate_shanten(self, observation: 'Observation', event: 'Event') -> int:
         shanten = Shanten()
-        tiles = copy.deepcopy(_observation.player.tiles)
-        if _observation.player.new_tile is not None:
-            tiles.append(_observation.player.new_tile)
+        tiles = copy.deepcopy(observation.player.tiles)
+        if observation.player.new_tile is not None:
+            tiles.append(observation.player.new_tile)
         if event.discard_tile is not None:
             tiles.remove(event.discard_tile)
         tiles_34 = TilesConverter.to_34_array(tiles)
@@ -37,14 +37,14 @@ class BaseClient(ClientInterface):
     def action(
       self,
       events: List['Event'],
-      _observation: 'Observation'
+      observation: 'Observation'
     ) -> 'Event':
         agari_event = next(filter(lambda x: x.is_agari, events), None)
         if agari_event is not None:
             print(agari_event)
             return agari_event
         else:
-            event = min(events, key=(lambda x: self._calculate_shanten(_observation=_observation, event=x)))
+            event = min(events, key=(lambda x: self._calculate_shanten(observation=observation, event=x)))
             return event
 
 
@@ -56,17 +56,6 @@ class GameClient(object):
 
     tiles: List[int] = []
     melds: List['Meld'] = []
-
-    def __init__(self, id: int, client: 'ClientInterface') -> None:
-        self.id = id
-        self.client = client
-
-    def action(
-      self,
-      events: List['Event'],
-      _observation: 'Observation',
-    ) -> 'Event':
-        return self.client.action(events=events, _observation=_observation)
 
     @property
     def is_open_hand(self) -> bool:
@@ -83,3 +72,22 @@ class GameClient(object):
             return WEST
         else:
             return SOUTH
+
+    @property
+    def next_player_seat(self) -> int:
+        return self.n_next_player_seat()
+
+    def __init__(self, id: int, client: 'ClientInterface') -> None:
+        self.id = id
+        self.client = client
+
+    def action(
+      self,
+      events: List['Event'],
+      observation: 'Observation',
+    ) -> 'Event':
+        return self.client.action(events=events, observation=observation)
+
+    def n_next_player_seat(self, n: int = 1) -> int:
+        return (self.seat + n) % 4
+
