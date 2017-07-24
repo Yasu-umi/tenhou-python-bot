@@ -187,8 +187,8 @@ class ArgumentsCreator:
             raise NotFoundNextSeatPlayerException
         new_tile = table.yama.pop()
 
-        events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
-            events=events, action_client=action_client, new_tile=new_tile
+        events = ArgumentsCreator._add_tsumo_and_tsumo_agari_and_riichi_events(
+            table=table, events=events, action_client=action_client, new_tile=new_tile
         )
         return events, action_client, new_tile
 
@@ -275,18 +275,21 @@ class ArgumentsCreator:
             raise NotFoundNextSeatPlayerException
         new_tile = table.yama.pop()
 
-        events = ArgumentsCreator._add_tsumo_and_tsumo_agari_events(
-            events=events, action_client=_action_client, new_tile=new_tile
+        events = ArgumentsCreator._add_tsumo_and_tsumo_agari_and_riichi_events(
+            table=table, events=events, action_client=_action_client, new_tile=new_tile
         )
         return events, _action_client, new_tile
 
     @staticmethod
-    def _add_tsumo_and_tsumo_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+    def _add_tsumo_and_tsumo_agari_and_riichi_events(table: 'GameTable', events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
         events = ArgumentsCreator._add_tsumo_events(
             events=events, action_client=action_client, new_tile=new_tile
         )
         events = ArgumentsCreator._add_tsumo_agari_events(
             events=events, action_client=action_client, new_tile=new_tile
+        )
+        events = ArgumentsCreator._add_riichi_events(
+            table=table, events=events, action_client=action_client, new_tile=new_tile
         )
         return events
 
@@ -297,6 +300,20 @@ class ArgumentsCreator:
             for discard_tile in action_client.tiles + [new_tile]
         ]
         return events + tsumo_events
+
+    @staticmethod
+    def _add_riichi_events(table: 'GameTable', events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+        riichi_events: List['Event'] = [
+            RiichiEvent(player_id=action_client.id, discard_tile=discard_tile)
+            for discard_tile in action_client.tiles + [new_tile]
+            if ArgumentsCreator._can_riichi(
+                table=table,
+                action_client=action_client,
+                tiles=action_client.tiles + [new_tile],
+                discard_tile=discard_tile
+            )
+        ]
+        return events + riichi_events
 
     @staticmethod
     def _add_rinshan_tsumo_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
@@ -445,3 +462,25 @@ class ArgumentsCreator:
         _melds = [TilesConverter.to_34_array(meld.tiles) for meld in melds]
         agari = Agari()
         return agari.is_agari(tiles=TilesConverter.to_34_array(tiles), melds=_melds)
+
+    @staticmethod
+    def _can_riichi(table: 'GameTable', action_client: 'GameClient', tiles: List[int], discard_tile: int) -> bool:
+        agari = Agari()
+        # 次順がない場合リーチできない
+        if len(table.yama) < 5:
+            return False
+        # アンカン以外の鳴きがある場合リーチできない
+        if len(action_client.melds) > 0:
+            return False
+        discard_tiles = [event.discard_tile  // 9 for event in table.selected_events if isinstance(event.discard_tile, int) and event.player_id == action_client.id]
+        for new_tile in range(0, 34):
+            new_tile_34 = new_tile // 9
+            # 捨牌と同じ牌では上がれない
+            if new_tile_34 == discard_tile // 9:
+                continue
+            # 今までに切った牌と同じ牌では上がれない
+            if new_tile_34 in discard_tiles:
+                continue
+            if agari.is_agari(tiles=TilesConverter.to_34_array(tiles) + [new_tile], melds=None):
+                return True
+        return False
