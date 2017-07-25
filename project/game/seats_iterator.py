@@ -18,7 +18,7 @@ class SeatsIterator(Iterator):
         return self
 
     def __next__(self) -> 'GameClient':
-        self.current_seat = self.current_seat + 1 if self.current_seat < 3 else 0
+        self.current_seat = (self.current_seat + 1) % 4
         client = next(filter(lambda x: x.seat == self.current_seat, self.clients), None)
         if client is None:
             raise NotFoundNextSeatPlayerException
