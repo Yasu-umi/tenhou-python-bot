@@ -191,9 +191,9 @@ class ActionExcutor:
         from_event = next(filter(lambda x: x.discard_tile == selected_event.meld_tiles[0], observation.events), None)
         from_seat = table.clients[from_event.player_id].seat if from_event is not None else None
         # AnKanDeclarationの場合from_whoはNoneになる
-        from_who = next(filter(lambda x: x.seat == from_seat, Observation.players), None) if from_seat is not None else None
+        from_who = next(filter(lambda x: x.seat == from_seat, observation.players), None) if from_seat is not None else None
         meld = Meld.init(
-            who=Observation.player,
+            who=observation.player,
             tiles=list(selected_event.meld_tiles),
             type=type,
             from_who=from_who,
