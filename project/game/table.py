@@ -4,7 +4,7 @@ from typing import List
 
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
-from game.client import ClientInterface, BaseClient, GameClient
+from game.client import ClientInterface, ClientInterface, GameClient
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
                         Event)
@@ -70,10 +70,10 @@ class GameTable(object):
 
     def __init__(
         self,
-        client0: ClientInterface = BaseClient(),
-        client1: ClientInterface = BaseClient(),
-        client2: ClientInterface = BaseClient(),
-        client3: ClientInterface = BaseClient(),
+        client0: ClientInterface = ClientInterface(),
+        client1: ClientInterface = ClientInterface(),
+        client2: ClientInterface = ClientInterface(),
+        client3: ClientInterface = ClientInterface(),
         is_hanchan: bool = True,
         is_open_tanyao: bool = True,
         is_aka: bool = True,
