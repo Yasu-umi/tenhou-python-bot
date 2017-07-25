@@ -153,17 +153,17 @@ class GameTable(object):
         self._haipai()
 
     def _clients_by_seat_range(self, start: int = 0, end: int = 4) -> List['GameClient']:
-        addFlag = False
+        addFlag = 0
         clients: List['GameClient'] = []
         for client in self.clients_loop_iter_orderby_seat:
             if client is None:
                 raise NotFoundNextSeatPlayerException
             if client.seat == start:
-                addFlag = True
-            if client.seat == end - 1:
-                addFlag = False
+                addFlag = 1
+            if client.seat == (end - 1) % 4:
+                addFlag = 2
                 break
-            if addFlag:
+            if addFlag == 1:
                 clients.append(client)
         return clients
 
