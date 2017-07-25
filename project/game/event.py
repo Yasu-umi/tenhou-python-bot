@@ -36,7 +36,7 @@ class EventBase(object):
             or isinstance(self, MinKanDeclarationEvent)
 
     def get_player(self, table: 'GameTable') -> 'GameClient':
-        next_player_id = (self.player_id + 1) % 4
+        next_player_id = self.player_id % 4
         next_player = table.clients[next_player_id]
         if next_player is None:
             raise NotFoundNextPlayerException

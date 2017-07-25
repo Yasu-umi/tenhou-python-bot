@@ -72,7 +72,7 @@ class ArgumentsCreator:
                 raise NotFoundNewTileException
 
             next_players = table._clients_by_seat_range(
-                start=last_event_player.seat + 1,
+                start=last_event_player.next_player_seat,
                 end=last_not_ron_event_player.seat
             )
             return ArgumentsCreator._after_has_discard_event(
@@ -113,16 +113,17 @@ class ArgumentsCreator:
             if last_not_none_event is None or last_has_discard_event is None:
                 raise FirstEventIsNoneException
             if last_not_none_event.has_discard_tile or isinstance(last_not_none_event, RonAgariEvent):
-                last_event_player = table.clients[last_has_discard_event.player_id]
-                if last_event_player is None:
+                last_event_player = last_event.get_player(table=table)
+                last_has_discard_event_player = table.clients[last_has_discard_event.player_id]
+                if last_has_discard_event_player is None:
                     raise NotFoundLastEventPlayerException
                 new_tile = last_has_discard_event.discard_tile
                 if new_tile is None:
                     raise NotFoundNewTileException
 
                 next_players = table._clients_by_seat_range(
-                    start=last_event_player.seat + 1,
-                    end=last_event_player.seat
+                    start=last_event_player.next_player_seat,
+                    end=last_has_discard_event_player.seat
                 )
                 return ArgumentsCreator._after_has_discard_event(
                     table=table,
