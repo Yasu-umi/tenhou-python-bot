@@ -47,6 +47,9 @@ class EventBase(object):
             self.player_id, self.type, self.discard_tile, self.meld_tiles
         )
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class TsumoEvent(EventBase):
     discard_tile: int

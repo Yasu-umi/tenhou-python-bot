@@ -63,3 +63,10 @@ class GameClient(object):
     def n_next_player_seat(self, n: int = 1) -> int:
         return (self.seat + n) % 4
 
+    def __str__(self) -> str:
+        return "player_id: {}, seat: {}, scores: {}, in_riichi: {}, tiles: {}, melds: {}".format(
+            self.id, self.seat, self.scores, self.in_riichi, self.tiles, self.melds
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
