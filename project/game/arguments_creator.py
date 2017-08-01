@@ -437,6 +437,8 @@ class ArgumentsCreator:
     @staticmethod
     def _get_chiable_tiles(action_client: 'GameClient', discard_tile: int) -> Optional[List[Tuple[int, int]]]:
         meld_parts = None
+        if discard_tile >= 108:
+            return meld_parts
         discard_tile_34 = discard_tile // 4
         # 3パターンあるが、同じ種類の数牌のみ
         meld_parts_34 = filter(
