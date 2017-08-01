@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
-from typing import List
+from typing import List, Optional
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH
 
@@ -52,6 +52,16 @@ class GameClient(object):
     def __init__(self, id: int, client: 'ClientInterface') -> None:
         self.id = id
         self.client = client
+
+    def re_init(self, seat: Optional[int] = None, scores: Optional[int] = None) -> None:
+        id = 0
+        if seat is not None:
+            self.seat = seat
+        if scores is not None:
+            self.scores = scores
+        self.in_riichi = False
+        self.tiles = []
+        self.melds = []
 
     def action(
       self,

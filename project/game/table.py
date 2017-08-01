@@ -145,9 +145,7 @@ class GameTable(object):
 
         self.n_open_dora = 1
 
-        self._init_riichi()
-        self._set_seats(seats)
-        self._set_scores(scores)
+        self._init_clients(seats=seats, scores=scores)
 
         self._set_yama()
         self._haipai()
@@ -167,17 +165,13 @@ class GameTable(object):
                 clients.append(client)
         return clients
 
-    def _init_riichi(self) -> None:
-        for client in self.clients:
-            client.in_riichi = False
-
-    def _set_seats(self, seats: List[int] = [0, 1, 2, 3]) -> None:
+    def _init_clients(
+        self,
+        seats: List[int] = [0, 1, 2, 3],
+        scores: List[int] = [25000, 25000, 25000, 25000],
+    ) -> None:
         for (i, client) in enumerate(self.clients):
-            client.seat = seats[i]
-
-    def _set_scores(self, scores: List[int] = [25000, 25000, 25000, 25000]) -> None:
-        for (i, client) in enumerate(self.clients):
-            client.scores = scores[i]
+            client.re_init(seat=seats[i], scores=scores[i])
 
     def _set_yama(self) -> None:
         hais = list(range(135))
