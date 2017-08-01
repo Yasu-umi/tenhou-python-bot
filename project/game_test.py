@@ -50,7 +50,7 @@ if __name__ == '__main__':
             client2 = BaseClient(),
             client3 = BaseClient(),
         )
-        res = t.next_action()
+        res = True
         while res:
             res = t.next_action()
         for client in t.clients:
