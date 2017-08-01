@@ -95,7 +95,7 @@ class ArgumentsCreator:
                 events=events, action_client=action_client, new_tile=new_tile
             )
             events = ArgumentsCreator._add_tsumo_agari_events(
-                events=events, action_client=action_client, new_tile=new_tile
+                table=table, events=events, action_client=action_client, new_tile=new_tile
             )
             # TODO: KyushuKyuhaiEventを加える
             return events, action_client, new_tile
@@ -153,7 +153,7 @@ class ArgumentsCreator:
                 events=events, action_client=action_client, new_tile=new_tile
             )
             events = ArgumentsCreator._add_tsumo_agari_events(
-                events=events, action_client=action_client, new_tile=new_tile
+                table=table, events=events, action_client=action_client, new_tile=new_tile
             )
             return events, action_client, new_tile
 
@@ -206,7 +206,7 @@ class ArgumentsCreator:
             action_client = next_player
 
             events = ArgumentsCreator._add_ron_agari_events(
-                events=events, action_client=action_client, new_tile=new_tile
+                table=table, events=events, action_client=action_client, new_tile=new_tile
             )
             if not only_ron:
                 kannable_tiles = ArgumentsCreator._get_kannable_tiles(
@@ -287,7 +287,7 @@ class ArgumentsCreator:
             events=events, action_client=action_client, new_tile=new_tile
         )
         events = ArgumentsCreator._add_tsumo_agari_events(
-            events=events, action_client=action_client, new_tile=new_tile
+            table=table, events=events, action_client=action_client, new_tile=new_tile
         )
         events = ArgumentsCreator._add_riichi_events(
             table=table, events=events, action_client=action_client, new_tile=new_tile
@@ -325,23 +325,21 @@ class ArgumentsCreator:
         return events + rinshan_tsumo_events
 
     @staticmethod
-    def _add_tsumo_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+    def _add_tsumo_agari_events(table: 'GameTable', events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
         tsumo_agari_events: List['Event'] = []
-        is_agari = ArgumentsCreator._is_agari(
-            tiles=action_client.tiles + [new_tile], melds=action_client.melds
-        )
+        win_event = TsumoAgariEvent(player_id=action_client.id)
+        is_agari = ArgumentsCreator._is_agari(table=table, client=action_client, win_event=win_event)
         if is_agari:
-            tsumo_agari_events.append(TsumoAgariEvent(player_id=action_client.id))
+            tsumo_agari_events.append(win_event)
         return events + tsumo_agari_events
 
     @staticmethod
-    def _add_ron_agari_events(events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
+    def _add_ron_agari_events(table: 'GameTable', events: List['Event'], action_client: 'GameClient', new_tile: int) -> List['Event']:
         ron_agari_events: List['Event'] = []
-        is_agari = ArgumentsCreator._is_agari(
-            tiles=action_client.tiles + [new_tile], melds=action_client.melds
-        )
+        win_event = RonAgariEvent(player_id=action_client.id)
+        is_agari = ArgumentsCreator._is_agari(table=table, client=action_client, win_event=win_event)
         if is_agari:
-            ron_agari_events.append(RonAgariEvent(player_id=action_client.id))
+            ron_agari_events.append(win_event)
         return events + ron_agari_events
 
     @staticmethod
@@ -461,10 +459,9 @@ class ArgumentsCreator:
         return meld_parts
 
     @staticmethod
-    def _is_agari(tiles: List[int], melds: List['Meld']) -> bool:
-        _melds = [TilesConverter.to_34_array(meld.tiles) for meld in melds]
-        agari = Agari()
-        return agari.is_agari(tiles=TilesConverter.to_34_array(tiles), melds=_melds)
+    def _is_agari(table: 'GameTable', client: 'GameClient', win_event: 'Event') -> bool:
+        (_, _, hand_value) = table._estimate_hand_value(client=client, win_event=win_event)
+        return hand_value is not None and hand_value.is_agari
 
     @staticmethod
     def _can_riichi(table: 'GameTable', action_client: 'GameClient', tiles: List[int], discard_tile: int) -> bool:

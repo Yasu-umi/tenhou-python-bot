@@ -5,7 +5,7 @@ import itertools
 import copy
 from functools import reduce
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from mahjong.ai.agari import Agari
 from mahjong import yaku
@@ -13,6 +13,32 @@ from mahjong.tile import TilesConverter
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, CHUN, HATSU, HAKU, TERMINAL_INDICES, HONOR_INDICES
 from mahjong.utils import is_chi, is_pon, is_pair, is_sou, is_pin, is_man, plus_dora, simplify
 from utils.settings_handler import settings
+
+
+class FinishedHandReturnValue(object):
+    def __init__(
+        self,
+        cost: Optional[Dict[str, int]] = None,
+        error: Optional[str] = None,
+        han: int = 0,
+        fu: int = 0,
+        hand_yaku: List['Yaku'] = [],
+    ) -> None:
+        self.cost = cost
+        self.error = error
+        self.han = han
+        self.fu = fu
+        self.hand_yaku = hand_yaku
+
+    @property
+    def is_agari(self):
+        return self.cost is not None
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
 
 
 class FinishedHand(object):
@@ -37,7 +63,8 @@ class FinishedHand(object):
                             dora_indicators: Optional[List[int]] = None,
                             called_kan_indices: Optional[List[int]] = None,
                             player_wind: Optional[int] = None,
-                            round_wind: Optional[int] = None):
+                            round_wind: Optional[int] = None
+    ) -> Optional['FinishedHandReturnValue']:
         """
         :param tiles: array with 14 tiles in 136-tile format
         :param win_tile: tile that caused win (ron or tsumo)
@@ -87,8 +114,8 @@ class FinishedHand(object):
         han = 0
         fu = 0
 
-        def return_response():
-            return {'cost': cost, 'error': error, 'han': han, 'fu': fu, 'hand_yaku': hand_yaku}
+        def return_response() -> FinishedHandReturnValue:
+            return FinishedHandReturnValue(cost=cost, error=error, han=han, fu=fu, hand_yaku=hand_yaku)
 
         # special situation
         if is_nagashi_mangan:
@@ -386,13 +413,13 @@ class FinishedHand(object):
             if not error:
                 cost = self.calculate_scores(han, fu, is_tsumo, is_dealer)
 
-            calculated_hand = {
-                'cost': cost,
-                'error': error,
-                'hand_yaku': hand_yaku,
-                'han': han,
-                'fu': fu
-            }
+            calculated_hand = FinishedHandReturnValue(
+                cost=cost,
+                error=error,
+                hand_yaku=hand_yaku,
+                han=han,
+                fu=fu,
+            )
             calculated_hands.append(calculated_hand)
 
         # exception hand
@@ -403,25 +430,21 @@ class FinishedHand(object):
                 han = yaku.kokushi.han['closed']
             fu = 0
             cost = self.calculate_scores(han, fu, is_tsumo, is_dealer)
-            calculated_hands.append({
-                'cost': cost,
-                'error': None,
-                'hand_yaku': [yaku.kokushi],
-                'han': han,
-                'fu': fu
-            })
+            calculated_hands.append(FinishedHandReturnValue(
+                cost=cost,
+                error=None,
+                hand_yaku=[yaku.kokushi],
+                han=han,
+                fu=fu,
+            ))
 
         # let's use cost for most expensive hand
-        calculated_hands = sorted(calculated_hands, key=lambda x: (x['han'], x['fu']), reverse=True)
+        calculated_hands = sorted(calculated_hands, key=lambda x: (x.han, x.fu), reverse=True)
 
-        calculated_hand = calculated_hands[0]
-        cost = calculated_hand['cost']
-        error = calculated_hand['error']
-        hand_yaku = calculated_hand['hand_yaku']
-        han = calculated_hand['han']
-        fu = calculated_hand['fu']
+        if len(calculated_hands) == 0:
+            return None
 
-        return return_response()
+        return calculated_hands[0]
 
     def calculate_scores(self, han, fu, is_tsumo, is_dealer):
         """

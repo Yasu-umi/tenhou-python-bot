@@ -43,3 +43,7 @@ class NotFoundlastDiscardEventException(Exception):
 
 class NotFoundNextPlayerException(Exception):
     pass
+
+
+class NotAgariException(Exception):
+    pass

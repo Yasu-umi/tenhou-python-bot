@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
-from typing import List
+from typing import List, Tuple, Optional, Union
 
 from game.action_excutor import ActionExcutor
 from game.arguments_creator import ArgumentsCreator
@@ -8,11 +8,11 @@ from game.client import ClientInterface, ClientInterface, GameClient
 from game.event import (PonEvent, ChiEvent, AnKanDeclarationEvent, MinKanDeclarationEvent, KaKanDeclarationEvent,
                         TsumoEvent, RinshanTsumoEvent, RiichiEvent, TsumoAgariEvent, RonAgariEvent, ChanKanAgariEvent, KyushuKyuhaiEvent, NoneEvent,
                         Event)
-from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException, NotFoundNextSeatPlayerException
+from game.exceptions import NotFoundLastEventException, NotFoundLastEventDiscardTileException, NotFoundNextSeatPlayerException, NotAgariException
 from game.seats_iterator import SeatsIterator
 
 from mahjong.constants import EAST, SOUTH, WEST, NORTH, AKA_DORA_LIST
-from mahjong.hand import FinishedHand
+from mahjong.hand import FinishedHand, FinishedHandReturnValue
 
 
 class GameTable(object):
@@ -193,55 +193,74 @@ class GameTable(object):
     def _get_next_dealer_seat(self) -> int:
         return self.dealer_seat + 1 if self.dealer_seat < 3 else 0
 
+    def _estimate_hand_value(
+        self,
+        client: 'GameClient',
+        win_event: Optional['Event'] = None
+    ) -> Union[Tuple['Event', 'Event','FinishedHandReturnValue'], Tuple[None, None, None]]:
+        hand = FinishedHand()
+
+        client_events = [event for event in self.selected_events if event.player_id == client.id]
+        if win_event is None:
+            win_event = client_events[-1] if len(client_events) > 0 else None
+        if win_event is None or (not win_event.is_agari):
+            return None, None, None
+        last_event = next(filter(lambda x: not x.is_agari, reversed(self.selected_events)), None)
+        if last_event is None:
+            return None, None, None
+        if last_event.discard_tile is None:
+            return None, None, None
+
+        hand_value = hand.estimate_hand_value(
+            tiles=client.tiles + [last_event.discard_tile],
+            win_tile=last_event.discard_tile,
+            is_tsumo=isinstance(win_event, TsumoAgariEvent),
+            is_riichi=client.in_riichi,
+            is_dealer=client.seat == self.dealer_seat,
+            is_ippatsu=last_event.player_id == client.id and isinstance(last_event, RiichiEvent),
+            is_rinshan=False,
+            is_chankan=isinstance(win_event, ChanKanAgariEvent),
+            is_haitei=False,
+            is_houtei=False,
+            is_daburu_riichi=False,
+            is_nagashi_mangan=False,
+            is_tenhou=False,
+            is_renhou=False,
+            is_chiihou=False,
+            open_sets=None,
+            dora_indicators=self.all_dora_indicators,
+            called_kan_indices=None,
+            player_wind=GameClient.player_wind(self.dealer_seat),
+            round_wind=self.round_wind,
+        )
+        if hand_value is not None and hand_value.is_agari:
+            return None, None, None
+        else:
+            return win_event, last_event, hand_value
+
     def _calc_scores(self) -> List[int]:
         scores = [client.scores for client in self.clients]
         hand = FinishedHand()
         for client in sorted(self.clients, key=lambda x: x.seat):
-            client_events = [event for event in self.selected_events if event.player_id == client.id]
-            win_event = client_events[-1] if len(client_events) > 0 else None
+            win_event, last_event, hand_value = self._estimate_hand_value(client)
             if win_event is None or (not win_event.is_agari):
                 continue
-            last_event = next(filter(lambda x: not x.is_agari, reversed(self.selected_events)), None)
             if last_event is None:
                 raise NotFoundLastEventException
-            if last_event.discard_tile is None:
-                raise NotFoundLastEventDiscardTileException
-
-            res = hand.estimate_hand_value(
-                tiles=client.tiles + [last_event.discard_tile],
-                win_tile=last_event.discard_tile,
-                is_tsumo=isinstance(win_event, TsumoAgariEvent),
-                is_riichi=client.in_riichi,
-                is_dealer=client.seat == self.dealer_seat,
-                is_ippatsu=last_event.player_id == client.id and isinstance(last_event, RiichiEvent),
-                is_rinshan=False,
-                is_chankan=isinstance(win_event, ChanKanAgariEvent),
-                is_haitei=False,
-                is_houtei=False,
-                is_daburu_riichi=False,
-                is_nagashi_mangan=False,
-                is_tenhou=False,
-                is_renhou=False,
-                is_chiihou=False,
-                open_sets=None,
-                dora_indicators=self.all_dora_indicators,
-                called_kan_indices=None,
-                player_wind=GameClient.player_wind(self.dealer_seat),
-                round_wind=self.round_wind,
-            )
-
-            if res['cost'] is not None:
+            if hand_value is None:
+                raise NotAgariException
+            if hand_value.cost is not None:
                 if isinstance(win_event, RonAgariEvent):
-                    scores[win_event.player_id] += res['cost']['main']
-                    scores[last_event.player_id] -= res['cost']['main']
+                    scores[win_event.player_id] += hand_value.cost['main']
+                    scores[last_event.player_id] -= hand_value.cost['main']
                 elif isinstance(win_event, TsumoAgariEvent):
                     for client in self.clients:
                         if client.id == win_event.player_id:
-                            scores[client.id] += (3 * res['cost']['main']) + res['cost']['additional']
+                            scores[client.id] += (3 * hand_value.cost['main']) + hand_value.cost['additional']
                         elif client.seat == self.dealer_seat:
-                            scores[client.id] -= (res['cost']['main'] + res['cost']['additional'])
+                            scores[client.id] -= (hand_value.cost['main'] + hand_value.cost['additional'])
                         else:
-                            scores[client.id] -= res['cost']['main']
+                            scores[client.id] -= hand_value.cost['main']
         return scores
 
     def _update_ended_game(self, next_dealer_seat: int = 0) -> None:
