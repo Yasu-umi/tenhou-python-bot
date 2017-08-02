@@ -197,19 +197,19 @@ class GameTable(object):
         self,
         client: 'GameClient',
         win_event: Optional['Event'] = None
-    ) -> Union[Tuple['Event', 'Event','FinishedHandReturnValue'], Tuple[None, None, None]]:
+    ) -> Tuple[Optional['Event'], Optional['Event'], Optional['FinishedHandReturnValue']]:
         hand = FinishedHand()
 
         client_events = [event for event in self.selected_events if event.player_id == client.id]
         if win_event is None:
             win_event = client_events[-1] if len(client_events) > 0 else None
         if win_event is None or (not win_event.is_agari):
-            return None, None, None
+            return (None, None, None)
         last_event = next(filter(lambda x: not x.is_agari, reversed(self.selected_events)), None)
         if last_event is None:
-            return None, None, None
+            return (None, None, None)
         if last_event.discard_tile is None:
-            return None, None, None
+            return (None, None, None)
 
         hand_value = hand.estimate_hand_value(
             tiles=client.tiles + [last_event.discard_tile],
@@ -234,15 +234,15 @@ class GameTable(object):
             round_wind=self.round_wind,
         )
         if hand_value is not None and hand_value.is_agari:
-            return None, None, None
+            return (None, None, None)
         else:
-            return win_event, last_event, hand_value
+            return (win_event, last_event, hand_value)
 
     def _calc_scores(self) -> List[int]:
         scores = [client.scores for client in self.clients]
         hand = FinishedHand()
         for client in sorted(self.clients, key=lambda x: x.seat):
-            win_event, last_event, hand_value = self._estimate_hand_value(client)
+            (win_event, last_event, hand_value) = self._estimate_hand_value(client)
             if win_event is None or (not win_event.is_agari):
                 continue
             if last_event is None:
