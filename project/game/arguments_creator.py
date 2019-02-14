@@ -138,7 +138,7 @@ class ArgumentsCreator:
                     events=events, action_client=action_client, new_tile=new_tile
                 )
                 return events, action_client, new_tile
-            raise 'NotImplimented'
+            raise Exception('NotImplimented')
 
         if isinstance(last_event, AnKanDeclarationEvent) or isinstance(last_event, MinKanDeclarationEvent):
             next_player_id = last_event.player_id
