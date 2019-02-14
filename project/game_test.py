@@ -17,6 +17,9 @@ if TYPE_CHECKING:
 
 
 class BaseClient(ClientInterface):
+    def __init__(self, debug: bool = False) -> None:
+        self.debug = debug
+
     def _calculate_shanten(self, observation: 'Observation', event: 'Event') -> int:
         shanten = Shanten()
         tiles = copy.deepcopy(observation.player.tiles)
@@ -33,7 +36,7 @@ class BaseClient(ClientInterface):
     def action(
       self,
       events: List['Event'],
-      observation: 'Observation'
+      observation: 'Observation',
     ) -> 'Event':
         agari_event = next(filter(lambda x: x.is_agari, events), None)
         riichi_event = next(filter(lambda x: isinstance(x, RiichiEvent), events), None)
@@ -58,7 +61,7 @@ if __name__ == '__main__':
 
     while True:
         t = GameTable(
-            client0=BaseClient(),
+            client0=BaseClient(debug=True),
             client1=BaseClient(),
             client2=BaseClient(),
             client3=BaseClient(),
