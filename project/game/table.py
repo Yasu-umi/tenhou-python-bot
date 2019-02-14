@@ -234,9 +234,9 @@ class GameTable(object):
             round_wind=self.round_wind,
         )
         if hand_value is not None and hand_value.is_agari:
-            return (None, None, None)
-        else:
             return (win_event, last_event, hand_value)
+        else:
+            return (None, None, None)
 
     def _calc_scores(self) -> List[int]:
         scores = [client.scores for client in self.clients]
