@@ -83,7 +83,6 @@ class ArgumentsCreator:
                 only_ron=True,
             )
 
-
         if last_event is None:
             next_player_seat = 0
             action_client = next(filter(lambda x: x.seat == next_player_seat, table.clients), None)

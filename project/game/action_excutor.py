@@ -74,7 +74,9 @@ class ActionExcutor:
                 table=table, client=client, observation=observation, selected_event=selected_event
             )
         elif isinstance(selected_event, NoneEvent):
-            return False
+            return ActionExcutor._execute_none(
+                table=table, client=client, observation=observation, selected_event=selected_event
+            )
         else:
             raise 'NotFoundEvent'
 
