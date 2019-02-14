@@ -4,6 +4,8 @@ import datetime
 from typing import List
 
 from game.client import ClientInterface
+# from game.event import NoneEvent, RiichiEvent
+from game.event import RiichiEvent
 from game.table import GameTable
 from mahjong.tile import TilesConverter
 from mahjong.ai.shanten import Shanten
@@ -23,7 +25,10 @@ class BaseClient(ClientInterface):
         if event.discard_tile is not None:
             tiles.remove(event.discard_tile)
         tiles_34 = TilesConverter.to_34_array(tiles)
-        return shanten.calculate_shanten(tiles_34=tiles_34)
+        open_sets_34 = list(map(lambda x: TilesConverter.to_34_array(x.tiles), observation.player.melds))
+        if event.is_meld:
+            open_sets_34.append(TilesConverter.to_34_array(event.meld_tiles))
+        return shanten.calculate_shanten(tiles_34=tiles_34, open_sets_34=open_sets_34)
 
     def action(
       self,
@@ -31,12 +36,20 @@ class BaseClient(ClientInterface):
       observation: 'Observation'
     ) -> 'Event':
         agari_event = next(filter(lambda x: x.is_agari, events), None)
+        riichi_event = next(filter(lambda x: isinstance(x, RiichiEvent), events), None)
+        # none_event = next(filter(lambda x: isinstance(x, NoneEvent), events), None)
         if agari_event is not None:
-            print(agari_event)
+            print('agari_event', agari_event)
             return agari_event
+        if riichi_event is not None:
+            print('riichi_event', riichi_event)
+            return riichi_event
+        # if none_event is not None:
+        #     return none_event
         else:
             event = min(events, key=(lambda x: self._calculate_shanten(observation=observation, event=x)))
             return event
+
 
 if __name__ == '__main__':
     agari_occred = False
@@ -45,10 +58,10 @@ if __name__ == '__main__':
 
     while True:
         t = GameTable(
-            client0 = BaseClient(),
-            client1 = BaseClient(),
-            client2 = BaseClient(),
-            client3 = BaseClient(),
+            client0=BaseClient(),
+            client1=BaseClient(),
+            client2=BaseClient(),
+            client3=BaseClient(),
         )
         res = True
         while res:
@@ -60,6 +73,7 @@ if __name__ == '__main__':
                 TilesConverter.to_one_line_string(client.tiles),
                 list(map(lambda meld: TilesConverter.to_one_line_string(meld.tiles), client.melds))
             ))
+            print("yama: {}".format(t.yama))
         t.next_round()
         for client in t.clients:
             if client.scores != 25000:

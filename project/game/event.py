@@ -23,6 +23,11 @@ class EventBase(object):
             or isinstance(self, ChanKanAgariEvent)
 
     @property
+    def is_meld(self) -> bool:
+        return isinstance(self, PonEvent) \
+            or isinstance(self, ChiEvent)
+
+    @property
     def has_discard_tile(self) -> bool:
         return isinstance(self, PonEvent) \
             or isinstance(self, ChiEvent) \
